@@ -8,7 +8,9 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import CommentIcon from '@mui/icons-material/Comment';
-import FormatColorFillIcon from '@mui/icons-material/FormatColorFill'; // Highlight icon
+import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Slider from '@mui/material/Slider';
 import IconButton from '@mui/material/IconButton';
 
@@ -40,8 +42,9 @@ const QuillEditor = () => {
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const [comments, setComments] = useState([]);
+  const [isHighlighted, setIsHighlighted] = useState(false);
 
-  
+
   useEffect(() => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
@@ -93,26 +96,61 @@ const QuillEditor = () => {
   const handleHighlight = () => {
     const editor = quillRef.current.getEditor();
     if (selectedRange) {
-      editor.formatText(selectedRange.index, selectedRange.length, "background", selectedColor);
+      if (isHighlighted) {
+
+        editor.formatText(selectedRange.index, selectedRange.length, "background", false);
+      } else {
+
+        editor.formatText(selectedRange.index, selectedRange.length, "background", selectedColor);
+      }
+      setIsHighlighted(!isHighlighted);
     }
   };
 
   const handleComment = () => {
-    const comment = prompt("Add a comment:");
-    if (comment && selectedRange) {
+    const commentText = prompt("Add a comment:");
+    if (commentText && selectedRange) {
       const editor = quillRef.current.getEditor();
       const selectedText = editor.getText(selectedRange.index, selectedRange.length);
       const color = `hsl(${rateValue}, 100%, 50%)`;
       editor.formatText(selectedRange.index, selectedRange.length, "background", color);
 
       const newComment = {
+        id: Date.now(),
         text: selectedText,
-        comment,
+        comment: commentText,
         range: selectedRange,
+        color,
       };
 
       setComments((prevComments) => [...prevComments, newComment]);
     }
+  };
+
+  const handleEditComment = (commentId) => {
+    const commentToEdit = comments.find((comment) => comment.id === commentId);
+    const updatedCommentText = prompt("Edit your comment:", commentToEdit.comment);
+    if (updatedCommentText) {
+      setComments((prevComments) =>
+        prevComments.map((comment) =>
+          comment.id === commentId ? { ...comment, comment: updatedCommentText } : comment
+        )
+      );
+    }
+  };
+
+  const handleDeleteComment = (commentId) => {
+    const commentToDelete = comments.find((comment) => comment.id === commentId);
+    setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
+    if (commentToDelete) {
+      const editor = quillRef.current.getEditor();
+      editor.formatText(commentToDelete.range.index, commentToDelete.range.length, "background", false);
+    }
+  };
+
+  const handleSelectComment = (range) => {
+    const editor = quillRef.current.getEditor();
+    editor.setSelection(range.index, range.length);
   };
 
   return (
@@ -202,9 +240,22 @@ const QuillEditor = () => {
           <ul>
             {comments.map((comment, index) => (
               <li key={index}>
-                <strong>Text:</strong> {comment.text}
+                <strong>Text:</strong>{" "}
+                <span
+                  style={{ cursor: "pointer", textDecoration: "underline", color: comment.color }}
+                  onClick={() => handleSelectComment(comment.range)}
+                >
+                  {comment.text}
+                </span>
                 <br />
                 <strong>Comment:</strong> {comment.comment}
+                <br />
+                <IconButton onClick={() => handleEditComment(comment.id)}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                  <DeleteIcon />
+                </IconButton>
               </li>
             ))}
           </ul>
@@ -215,3 +266,4 @@ const QuillEditor = () => {
 };
 
 export default QuillEditor;
+

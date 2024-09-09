@@ -162,9 +162,7 @@ const QuillEditor = () => {
         <IconButton onClick={() => quillRef.current.getEditor().history.redo()}>
           <RedoIcon />
         </IconButton>
-        <IconButton onClick={handleHighlight}>
-          <FormatColorFillIcon />
-        </IconButton>
+
       </div>
 
       <div className="editor-and-comments">
@@ -239,23 +237,27 @@ const QuillEditor = () => {
           <h3>Comments</h3>
           <ul>
             {comments.map((comment, index) => (
-              <li key={index}>
-                <strong>Text:</strong>{" "}
-                <span
-                  style={{ cursor: "pointer", textDecoration: "underline", color: comment.color }}
-                  onClick={() => handleSelectComment(comment.range)}
-                >
-                  {comment.text}
-                </span>
-                <br />
-                <strong>Comment:</strong> {comment.comment}
-                <br />
-                <IconButton onClick={() => handleEditComment(comment.id)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDeleteComment(comment.id)}>
-                  <DeleteIcon />
-                </IconButton>
+              <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
+                <div>
+                  <strong>Text:</strong>{" "}
+                  <span
+                    style={{ color: comment.color }}
+
+                  >
+                    {comment.text}
+                  </span>
+                  <br />
+                  <strong>Comment:</strong> {comment.comment}
+                </div>
+                <div style={{ display: "flex" }}>
+
+                  <IconButton onClick={() => handleEditComment(comment.id)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </div>
               </li>
             ))}
           </ul>

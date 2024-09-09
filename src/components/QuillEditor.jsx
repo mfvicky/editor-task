@@ -240,10 +240,7 @@ const QuillEditor = () => {
               <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
                 <div>
                   <strong>Text:</strong>{" "}
-                  <span
-                    style={{ color: comment.color }}
-
-                  >
+                  <span>
                     {comment.text}
                   </span>
                   <br />

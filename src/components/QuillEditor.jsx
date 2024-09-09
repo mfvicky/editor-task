@@ -2,12 +2,19 @@ import React, { useRef, useState, useEffect } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./QuillEditor.css";
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
+import CommentIcon from '@mui/icons-material/Comment';
+import FormatColorFillIcon from '@mui/icons-material/FormatColorFill'; // Highlight icon
+import Slider from '@mui/material/Slider';
+import IconButton from '@mui/material/IconButton';
 
-// Custom Undo/Redo
 const CustomUndoRedo = (editor) => {
   const toolbar = editor.getModule("toolbar");
 
-  // Check if the toolbar module exists
   if (toolbar) {
     toolbar.addHandler("undo", () => {
       editor.history.undo();
@@ -26,20 +33,37 @@ const QuillEditor = () => {
   const quillRef = useRef(null);
   const [selectedRange, setSelectedRange] = useState(null);
   const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
   const [rateValue, setRateValue] = useState(50); // default value for slider
-  console.log(rateValue,"ratevalue", editorContent)
-  // Set Undo/Redo custom buttons
+  const [selectedColor, setSelectedColor] = useState(`hsl(50, 100%, 50%)`);
+  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
+  const [isToolbarVisible, setIsToolbarVisible] = useState(false);
+  const [comments, setComments] = useState([]);
+
+  
   useEffect(() => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
 
     editor.on("selection-change", (range) => {
-      setSelectedRange(range);
+      if (range && range.length > 0) {
+        const bounds = editor.getBounds(range.index);
+        const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
+        const toolbarLeft = bounds.left;
+        setToolbarPosition({ top: toolbarTop, left: toolbarLeft });
+        setIsToolbarVisible(true);
+        setSelectedRange(range);
+      } else {
+        setIsToolbarVisible(false);
+        setSelectedRange(null);
+      }
     });
 
-    // Check if the selected text is bold
     editor.on("text-change", () => {
       setIsBold(editor.getFormat().bold || false);
+      setIsItalic(editor.getFormat().italic || false);
+      setIsUnderline(editor.getFormat().underline || false);
     });
   }, []);
 
@@ -48,64 +72,144 @@ const QuillEditor = () => {
     editor.format("bold", !isBold);
   };
 
+  const handleItalic = () => {
+    const editor = quillRef.current.getEditor();
+    editor.format("italic", !isItalic);
+  };
+
+  const handleUnderline = () => {
+    const editor = quillRef.current.getEditor();
+    editor.format("underline", !isUnderline);
+  };
+
   const handleRateChange = (e) => {
     const editor = quillRef.current.getEditor();
-    const color = `hsl(${e.target.value}, 100%, 50%)`; // Using HSL to generate colors based on slider
+    const color = `hsl(${e.target.value}, 100%, 50%)`;
     editor.formatText(selectedRange.index, selectedRange.length, "background", color);
     setRateValue(e.target.value);
+    setSelectedColor(color);
+  };
+
+  const handleHighlight = () => {
+    const editor = quillRef.current.getEditor();
+    if (selectedRange) {
+      editor.formatText(selectedRange.index, selectedRange.length, "background", selectedColor);
+    }
   };
 
   const handleComment = () => {
     const comment = prompt("Add a comment:");
-    if (comment) {
-      console.log(`Comment added: ${comment}`);
-      // Handle comment logic (optional UI or backend)
+    if (comment && selectedRange) {
+      const editor = quillRef.current.getEditor();
+      const selectedText = editor.getText(selectedRange.index, selectedRange.length);
+      const color = `hsl(${rateValue}, 100%, 50%)`;
+      editor.formatText(selectedRange.index, selectedRange.length, "background", color);
+
+      const newComment = {
+        text: selectedText,
+        comment,
+        range: selectedRange,
+      };
+
+      setComments((prevComments) => [...prevComments, newComment]);
     }
   };
 
   return (
     <div className="editor-container">
       <div className="custom-toolbar">
-        <button onClick={() => quillRef.current.getEditor().history.undo()}>Undo</button>
-        <button onClick={() => quillRef.current.getEditor().history.redo()}>Redo</button>
+        <IconButton onClick={() => quillRef.current.getEditor().history.undo()}>
+          <UndoIcon />
+        </IconButton>
+        <IconButton onClick={() => quillRef.current.getEditor().history.redo()}>
+          <RedoIcon />
+        </IconButton>
+        <IconButton onClick={handleHighlight}>
+          <FormatColorFillIcon />
+        </IconButton>
       </div>
 
-      <ReactQuill
-        ref={quillRef}
-        value={editorContent}
-        onChange={setEditorContent}
-        modules={{
-          toolbar: [
-            [{ undo: "Undo" }, { redo: "Redo" }],
-            ["bold", "italic", "underline"],
-          ],
-          history: {
-            delay: 2000,
-            maxStack: 500,
-            userOnly: true,
-          },
-        }}
-        className="custom-quill"
-      />
+      <div className="editor-and-comments">
+        <ReactQuill
+          ref={quillRef}
+          value={editorContent}
+          onChange={setEditorContent}
+          modules={{
+            toolbar: [
+              [{ undo: "Undo" }, { redo: "Redo" }],
+            ],
+            history: {
+              delay: 2000,
+              maxStack: 500,
+              userOnly: true,
+            },
+          }}
+          className="custom-quill"
+        />
 
-      {selectedRange && (
-        <div className="inline-toolbar">
-          <button onClick={handleBold} className={isBold ? "active" : ""}>
-            Bold
-          </button>
-          <label>
-            Rate:
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={rateValue}
-              onChange={handleRateChange}
-            />
-          </label>
-          <button onClick={handleComment}>Comment</button>
+        {isToolbarVisible && (
+          <div
+            className="inline-toolbar"
+            style={{
+              top: `${toolbarPosition.top}px`,
+              left: `${toolbarPosition.left}px`,
+              position: "absolute",
+            }}
+          >
+            <IconButton onClick={handleBold} className={isBold ? "active" : ""}>
+              <FormatBoldIcon />
+            </IconButton>
+            <IconButton onClick={handleItalic} className={isItalic ? "active" : ""}>
+              <FormatItalicIcon />
+            </IconButton>
+            <IconButton onClick={handleUnderline} className={isUnderline ? "active" : ""}>
+              <FormatUnderlinedIcon />
+            </IconButton>
+
+            <label style={{ marginLeft: '10px' }}>
+              Rate:
+              <Slider
+                min={0}
+                max={100}
+                value={rateValue}
+                onChange={handleRateChange}
+                style={{ width: '100px', marginLeft: '10px' }}
+              />
+            </label>
+
+            <div
+              className="color-preview"
+              style={{
+                backgroundColor: selectedColor,
+                width: "20px",
+                height: "20px",
+                borderRadius: "50%",
+                display: "inline-block",
+                marginLeft: "10px",
+                marginRight: "10px",
+                marginTop: "4px"
+              }}
+            ></div>
+
+            <IconButton onClick={handleComment}>
+              <CommentIcon />
+            </IconButton>
+          </div>
+        )}
+
+        <div className="comment-sidebar">
+          <h3>Comments</h3>
+          <ul>
+            {comments.map((comment, index) => (
+              <li key={index}>
+                <strong>Text:</strong> {comment.text}
+                <br />
+                <strong>Comment:</strong> {comment.comment}
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
+      </div>
     </div>
   );
 };

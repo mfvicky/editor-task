@@ -1,61 +1,154 @@
+/* General Styling for the Editor Container */
+.ql-toolbar.ql-snow {
+    display: none;
+}
+
+.ql-container.ql-snow {
+    border: 0;
+}
+
 .editor-container {
-    position: relative;
-    padding: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .custom-toolbar {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    background-color: #f4f4f9;
+    font-family: "Arial", sans-serif;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* Custom Toolbar Styling */
+.custom-toolbar {
+    display: flex;
+    justify-content: flex-start;
+    padding: 10px;
+    background-color: white;
+    border-bottom: 1px solid #e0e0e0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
     margin-bottom: 10px;
-  }
-  
-  .custom-toolbar button {
-    margin-left: 10px;
-    background-color: #4CAF50;
-    color: white;
+}
+
+.custom-toolbar button {
+    margin-right: 10px;
+    padding: 6px 12px;
     border: none;
-    padding: 8px 12px;
-    cursor: pointer;
     border-radius: 4px;
-  }
-  
-  .custom-toolbar button:hover {
-    background-color: #45a049;
-  }
-  
-  .custom-quill {
-    height: 400px;
-  }
-  
-  .inline-toolbar {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    padding: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  .inline-toolbar button {
-    background-color: #f4f4f4;
-    padding: 5px;
-    border: none;
+    background-color: #ffffff;
+    color: #3f51b5;
     cursor: pointer;
-    border-radius: 3px;
-  }
-  
-  .inline-toolbar button.active {
-    background-color: #007bff;
+    transition: background-color 0.2s ease;
+}
+
+.custom-toolbar button:hover {
+    background-color: #f0f0f0;
+}
+
+/* Editor Content Area Styling */
+.editor-and-comments {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+/* Styling for Quill Editor */
+.custom-quill {
+    flex: 1;
+    padding: 16px;
+    background-color: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    min-height: 500px;
+}
+
+/* Inline Toolbar (Bold, Rate Slider, Comment) */
+.inline-toolbar {
+    display: flex;
+    padding: 8px;
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.inline-toolbar button {
+    margin-right: 8px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #3f51b5;
     color: white;
-  }
-  
-  .inline-toolbar input[type="range"] {
-    width: 100px;
-  }
-  
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.inline-toolbar button:hover {
+    margin-right: 8px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #4e5cad;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.inline-toolbar button.active {
+    background-color: #283593;
+}
+
+.inline-toolbar input[type="range"] {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.inline-toolbar label {
+    display: flex;
+    align-items: center;
+    color: #333;
+}
+
+.inline-toolbar input {
+    margin-left: 8px;
+}
+
+/* Sidebar for Comments */
+.comment-sidebar {
+    margin-left: 10px;
+    border-radius: 8px;
+    width: 250px;
+    padding: 16px;
+    background-color: #fafafa;
+    border-left: 1px solid #e0e0e0;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+.comment-sidebar h3 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.comment-sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.comment-sidebar li {
+    margin-bottom: 12px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.comment-sidebar strong {
+    font-weight: bold;
+}
+
+.comment-sidebar li:hover {
+    background-color: #f1f1f1;
+}

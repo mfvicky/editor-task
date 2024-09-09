@@ -43,12 +43,10 @@ const QuillEditor = () => {
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const [comments, setComments] = useState([]);
   const [isHighlighted, setIsHighlighted] = useState(false);
-
-
   useEffect(() => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
-
+  
     editor.on("selection-change", (range) => {
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
@@ -62,13 +60,43 @@ const QuillEditor = () => {
         setSelectedRange(null);
       }
     });
-
-    editor.on("text-change", () => {
+  
+    // Handle text change and automatically delete comments if text is removed
+    editor.on("text-change", (delta, oldDelta, source) => {
+      if (source === "user") {
+        delta.ops.forEach((op) => {
+          // Check for delete operation in delta
+          if (op.delete) {
+            const affectedRangeStart = editor.getSelection(true).index;
+            const affectedRangeEnd = affectedRangeStart + op.delete;
+  
+            // Remove comments that have their text deleted
+            setComments((prevComments) =>
+              prevComments.filter((comment) => {
+                const commentEnd = comment.range.index + comment.range.length;
+                // Check if the deleted range affects this comment
+                if (
+                  (comment.range.index >= affectedRangeStart && comment.range.index <= affectedRangeEnd) ||
+                  (commentEnd >= affectedRangeStart && commentEnd <= affectedRangeEnd)
+                ) {
+                  // Remove highlight for this comment in the editor
+                  editor.formatText(comment.range.index, comment.range.length, "background", false);
+                  return false; // remove comment
+                }
+                return true; // keep comment
+              })
+            );
+          }
+        });
+      }
+  
+      // Update bold, italic, and underline states
       setIsBold(editor.getFormat().bold || false);
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     });
   }, []);
+  
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();

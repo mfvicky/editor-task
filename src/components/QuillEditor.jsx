@@ -42,11 +42,11 @@ const QuillEditor = () => {
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const [comments, setComments] = useState([]);
-  const [isHighlighted, setIsHighlighted] = useState(false);
+  const [isHighlighted, setIsHighlighted] = useState(true);
   useEffect(() => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
-  
+
     editor.on("selection-change", (range) => {
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
@@ -60,7 +60,7 @@ const QuillEditor = () => {
         setSelectedRange(null);
       }
     });
-  
+
     // Handle text change and automatically delete comments if text is removed
     editor.on("text-change", (delta, oldDelta, source) => {
       if (source === "user") {
@@ -69,7 +69,7 @@ const QuillEditor = () => {
           if (op.delete) {
             const affectedRangeStart = editor.getSelection(true).index;
             const affectedRangeEnd = affectedRangeStart + op.delete;
-  
+
             // Remove comments that have their text deleted
             setComments((prevComments) =>
               prevComments.filter((comment) => {
@@ -89,14 +89,14 @@ const QuillEditor = () => {
           }
         });
       }
-  
+
       // Update bold, italic, and underline states
       setIsBold(editor.getFormat().bold || false);
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     });
   }, []);
-  
+
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
@@ -156,6 +156,7 @@ const QuillEditor = () => {
   };
 
   const handleEditComment = (commentId) => {
+    console.log(comments, "comment.find")
     const commentToEdit = comments.find((comment) => comment.id === commentId);
     const updatedCommentText = prompt("Edit your comment:", commentToEdit.comment);
     if (updatedCommentText) {
@@ -190,11 +191,14 @@ const QuillEditor = () => {
         <IconButton onClick={() => quillRef.current.getEditor().history.redo()}>
           <RedoIcon />
         </IconButton>
-
+        <IconButton onClick={handleHighlight}>
+          <FormatColorFillIcon />
+        </IconButton>
       </div>
 
       <div className="editor-and-comments">
         <ReactQuill
+          placeholder="Type Here.."
           ref={quillRef}
           value={editorContent}
           onChange={setEditorContent}

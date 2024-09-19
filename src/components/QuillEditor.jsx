@@ -544,7 +544,7 @@ const QuillEditor = () => {
               <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
                   <strong>{voice.label}</strong>
-                  <ul>
+                  <ul style={{ fontSize: "small", padding: "4px", boxShadow: "none !important" }}>
                     {voice.values.map((value, i) => (
                       <li key={i}>Time {i}s: {value}</li>
                     ))}
@@ -560,7 +560,7 @@ const QuillEditor = () => {
           </ul>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

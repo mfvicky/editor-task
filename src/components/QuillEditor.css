@@ -4,7 +4,7 @@
 }
 
 .ql-container.ql-snow {
-    border: 0;
+    border: 0 !important;
 }
 
 .editor-container {
@@ -78,12 +78,14 @@
     padding: 6px 12px;
     border: none;
     border-radius: 4px;
-    background-color: #3f51b5;
-    color: white;
+    /* background-color: #3f51b5; */
+    /* color: white; */
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
-
+.color-white{
+    color:#e0e0e0;
+}
 .inline-toolbar button:hover {
     margin-right: 8px;
     padding: 6px 12px;
@@ -150,5 +152,128 @@
 }
 
 .comment-sidebar li:hover {
-    background-color: #f1f1f1;
+    /* background-color: #f1f1f1; */
+    background-color: #3a3a3a;
+}
+
+.ql-editor::before {
+    color: #a0a0a0 !important;
+    /* Light gray for dark mode */
+    font-style: italic;
+    margin-left: 20px;
+    /* Optional: Italic to indicate it's a placeholder */
+    /* content: attr(data-placeholder); */
+}
+
+/* General Styling for the Editor Container */
+.ql-toolbar.ql-snow {
+    display: none;
+    color: #F9F9F3;
+}
+
+.ql-container.ql-snow {
+    border: 0;
+}
+
+.editor-container {
+    background-color: #1e1e1e;
+    /* Dark mode background */
+    color: #F9F9F3;
+}
+
+/* Custom Toolbar Styling */
+.custom-toolbar {
+    background-color: #2c2c2c;
+    /* Darker toolbar background */
+    border: 1px solid #3a3a3a;
+    /* Darker border */
+}
+
+.custom-toolbar button {
+    background-color: #3a3a3a;
+    /* Darker button background */
+}
+
+/* Editor Content Area Styling */
+.editor-and-comments {
+    background-color: #1e1e1e;
+    /* Dark mode content background */
+}
+
+/* Styling for Quill Editor */
+.custom-quill {
+    background-color: #2a2a2a;
+    /* Dark mode Quill editor background */
+}
+
+/* Inline Toolbar (Bold, Rate Slider, Comment) */
+.inline-toolbar {
+    background-color: #2c2c2c;
+    /* Darker inline toolbar background */
+    border: 1px solid #3a3a3a;
+}
+
+.inline-toolbar label {
+
+    color: #F9F9F3;
+}
+
+/* Sidebar for Comments */
+.comment-sidebar {
+    background-color: #2a2a2a;
+    /* Dark mode sidebar background */
+    border-left: 1px solid #3a3a3a;
+}
+
+.comment-sidebar h3 {
+    color: #e0e0e0
+}
+
+.comment-sidebar li {
+    background-color: #333333;
+    /* Dark mode comment background */
+}
+
+.dotted-line-paragraph {
+    position: relative;
+    padding-left: 30px !important;
+    margin-bottom: 20px !important;
+}
+
+.dotted-line-paragraph::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(to bottom, green 0%, green 10%, transparent 10%, transparent 20%);
+}
+
+.dotted-line-paragraph::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: green;
+}
+
+.dotted-line-paragraph.empty::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border: 1px solid green; /* Hollow dot */
+    background-color: transparent; /* Transparent background */
+}
+
+
+.chart-controls{
+    display: flex;
+    justify-content: flex-end;
 }

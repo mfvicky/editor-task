@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import Quill from 'quill';
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./QuillEditor.css";
@@ -13,6 +14,38 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Slider from '@mui/material/Slider';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/IconButton';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import { Popover, Tooltip, Typography } from '@mui/material';
+import DottedLineModule from './DottedLineModule';  // Assuming you moved the custom blot code here
+import LineChartIcon from '@mui/icons-material/ShowChart';
+import LineChart from './LineChart';
+import VoiceGraph from './VoiceGraph';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
+
+// --- dot-dashed code ---
+// Register the custom blot for dotted-line paragraphs
+// const Block = Quill.import('blots/block');
+// class DottedLineBlot extends Block {
+//   static create() {
+//     const node = super.create();
+//     node.classList.add('dotted-line-paragraph');
+//     return node;
+//   }
+// }
+
+// DottedLineBlot.blotName = 'dottedLine';
+// DottedLineBlot.tagName = 'p';
+Quill.register(DottedLineModule);
+// --- dot-dashed code end ---
+
 
 const CustomUndoRedo = (editor) => {
   const toolbar = editor.getModule("toolbar");
@@ -43,11 +76,79 @@ const QuillEditor = () => {
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const [comments, setComments] = useState([]);
   const [isHighlighted, setIsHighlighted] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const initialChartData = {
+    labels: ['0s', '1s', '2s', '3s', '4s', '5s', '6s'], // Time labels
+    values: [20, 15, 30, 25, 35, 30, 20], // Initial values for the chart
+  };
+  const [chartVisible, setChartVisible] = useState(false);
+  const [chartData, setChartData] = useState(initialChartData);
+  const [voiceData, setVoiceData] = useState([]); // New state for voice data
+  const [tempChartData, setTempChartData] = useState([]);
+  const [open, setOpen] = React.useState(false);
+
+  const handleUpdateChart = (index, newValue) => {
+    console.log(index, newValue, 'vicky')
+    const newValues = [...tempChartData.values];
+    newValues[index] = newValue; // Update the value at the given index
+    setTempChartData({ ...tempChartData, values: newValues });
+  };
+  console.log(chartData, " - ", voiceData, " - ", tempChartData, "graph vicky ",)
+  const handleShowChart = () => {
+
+    setShowChart(!showChart); // graph line 
+    setTempChartData(chartData); // Use current chart data as temporary
+    // setChartVisible(true);
+  };
+
+  const handleApplyChart = () => {
+    const newVoiceEntry = {
+      id: Date.now(),
+      label: `Voice Point ${voiceData.length + 1}`,
+      values: tempChartData.values,
+    };
+    setVoiceData([...voiceData, newVoiceEntry]);
+    setChartData(tempChartData); // Update the main chart data
+    // setChartVisible(false); // Hide the chart
+    setShowChart(false);
+    setIsToolbarVisible(false);
+    highlightSelectedText(); // Highlight the selected text
+  };
+
+  // Cancel and discard the changes
+  const handleCancelChart = () => {
+    setShowChart(false);
+    setIsToolbarVisible(false);
+    setTempChartData(chartData); // Reset to original chart data
+    // setChartVisible(false); // Hide the chart without saving
+  };
+
+  const highlightSelectedText = () => {
+    const editor = quillRef.current.getEditor();
+    if (selectedRange) {
+      editor.formatText(selectedRange.index, selectedRange.length, "background", selectedColor);
+    }
+  };
 
   useEffect(() => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
-  
+    // --- dot-dashed code ---
+    const applyDottedLineFormatting = () => {
+      const paragraphs = editor.root.querySelectorAll('p');
+      paragraphs.forEach((p) => {
+        if (!p.classList.contains('dotted-line-paragraph')) {
+          p.classList.add('dotted-line-paragraph');
+        }
+        if (p.textContent.trim() === "") { // Check if paragraph is empty
+          p.classList.add('empty'); // Add 'empty' class for empty paragraphs
+        } else {
+          p.classList.remove('empty'); // Remove 'empty' class if not empty
+        }
+      });
+    };
+    // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
@@ -61,14 +162,15 @@ const QuillEditor = () => {
         setSelectedRange(null);
       }
     };
-  
+
     const handleTextChange = (delta, oldDelta, source) => {
+      console.log(editor.getContents(), editor.root.innerHTML, 'vicky')
       if (source === "user") {
         delta.ops.forEach((op) => {
           if (op.delete) {
             const affectedRangeStart = editor.getSelection(true).index;
             const affectedRangeEnd = affectedRangeStart + op.delete;
-  
+
             setComments((prevComments) =>
               prevComments.filter((comment) => {
                 const commentEnd = comment.range.index + comment.range.length;
@@ -84,16 +186,23 @@ const QuillEditor = () => {
             );
           }
         });
+        // --- dot-dashed code ---
+        // Apply dotted-line formatting after content change
+        applyDottedLineFormatting();
+        // --- dot-dashed code end ---
       }
-  
+
       setIsBold(editor.getFormat().bold || false);
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     };
-  
+
     editor.on("selection-change", handleSelectionChange);
     editor.on("text-change", handleTextChange);
-  
+    // --- dot-dashed code ---
+    // Apply dotted-line formatting on initial load
+    applyDottedLineFormatting();
+    // --- dot-dashed code end ---
     // Cleanup function
     return () => {
       editor.off("selection-change", handleSelectionChange);
@@ -101,6 +210,14 @@ const QuillEditor = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // Add a class to the editor container based on dark mode state
+    if (isDarkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [isDarkMode]);
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
@@ -185,9 +302,86 @@ const QuillEditor = () => {
     const editor = quillRef.current.getEditor();
     editor.setSelection(range.index, range.length);
   };
+  const handleToggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
+  const handleAddVoiceData = () => {
+    const newVoiceData = {
+      id: Date.now(),
+      label: `Voice Point ${voiceData.length + 1}`,
+      values: [...chartData.values], // Copy the chart data
+    };
+
+    setVoiceData((prevVoiceData) => [...prevVoiceData, newVoiceData]);
+  };
+
+  const handleDeleteVoiceData = (voiceId) => {
+    setVoiceData((prevVoiceData) => prevVoiceData.filter((voice) => voice.id !== voiceId));
+  };
+
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setShowChart(false)
+  };
+
+
+  console.log(comments, "comments")
   return (
     <div className="editor-container">
+
+
+      {/* <Dialog
+        open={showChart}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title" sx={{ backgroundColor: "#1e1e1e", color: "#e0e0e0" }}>
+          Change text voice modulation
+        </DialogTitle>
+        <DialogContent sx={{ backgroundColor: "#1e1e1e" }}>
+          <DialogContentText id="alert-dialog-description">
+            {showChart && ( // graph line 
+              <div className="chart-container">
+                {showChart && (
+                 
+                  <div className="chart-container">
+                    <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
+
+                    <div className="chart-controls">
+
+                      <Tooltip title="Cancel" placement="bottom">
+                        <IconButton onClick={handleCancelChart} color="warning">
+                          <HighlightOffIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Apply" placement="bottom">
+                        <IconButton onClick={handleApplyChart} color="primary">
+                          <CheckCircleOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
+
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelChart} size="small">Cancel</Button>
+          <Button onClick={handleApplyChart} size="small" autoFocus>
+            Apply
+          </Button>
+        </DialogActions>
+      </Dialog> */}
       <div className="custom-toolbar">
         <IconButton onClick={() => quillRef.current.getEditor().history.undo()}>
           <UndoIcon />
@@ -198,6 +392,12 @@ const QuillEditor = () => {
         <IconButton onClick={handleHighlight}>
           <FormatColorFillIcon />
         </IconButton>
+        {/* <IconButton onClick={handleToggleDarkMode}>
+          {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+        </IconButton> */}
+        {/* <IconButton onClick={handleShowChart}> 
+          <LineChartIcon /> 
+        </IconButton> */}
       </div>
 
       <div className="editor-and-comments">
@@ -215,9 +415,13 @@ const QuillEditor = () => {
               maxStack: 5000,
               userOnly: true,
             },
+
           }}
           className="custom-quill"
         />
+
+
+
 
         {isToolbarVisible && (
           <div
@@ -226,51 +430,91 @@ const QuillEditor = () => {
               top: `${toolbarPosition.top}px`,
               left: `${toolbarPosition.left}px`,
               position: "absolute",
+              display: "block",
             }}
           >
-            <IconButton onClick={handleBold} className={isBold ? "active" : ""}>
-              <FormatBoldIcon />
-            </IconButton>
-            <IconButton onClick={handleItalic} className={isItalic ? "active" : ""}>
-              <FormatItalicIcon />
-            </IconButton>
-            <IconButton onClick={handleUnderline} className={isUnderline ? "active" : ""}>
-              <FormatUnderlinedIcon />
-            </IconButton>
+            <div style={{ display: "flex" }}>
+              <IconButton color="info" onClick={handleBold} className={isBold ? "active" : ""}>
+                <FormatBoldIcon />
+              </IconButton>
+              <IconButton color="info" onClick={handleItalic} className={isItalic ? "active" : ""}>
+                <FormatItalicIcon />
+              </IconButton>
+              <IconButton color="info" onClick={handleUnderline} className={isUnderline ? "active" : ""}>
+                <FormatUnderlinedIcon />
+              </IconButton>
+              {/* <IconButton onClick={handleShowChart}> */}
+              <IconButton color="info" className="color-white" onClick={handleShowChart}>
+                <LineChartIcon />
+              </IconButton>
 
-            <label style={{ marginLeft: '10px' }}>
-              Rate:
-              <Slider
-                min={0}
-                max={100}
-                value={rateValue}
-                onChange={handleRateChange}
-                style={{ width: '100px', marginLeft: '10px' }}
-              />
-            </label>
+              <label style={{ marginLeft: '10px' }}>
+                Rate:{rateValue}
+                <Slider
+                  min={0}
+                  max={100}
+                  value={rateValue}
+                  onChange={handleRateChange}
+                  style={{ width: '100px', marginLeft: '10px' }}
+                />
+              </label>
 
-            <div
-              className="color-preview"
-              style={{
-                backgroundColor: selectedColor,
-                width: "20px",
-                height: "20px",
-                borderRadius: "50%",
-                display: "inline-block",
-                marginLeft: "10px",
-                marginRight: "10px",
-                marginTop: "4px"
-              }}
-            ></div>
+              <div
+                className="color-preview"
+                style={{
+                  backgroundColor: selectedColor,
+                  width: "20px",
+                  height: "20px",
+                  borderRadius: "50%",
+                  display: "inline-block",
+                  marginLeft: "10px",
+                  marginRight: "10px",
+                  marginTop: "4px"
+                }}
+              ></div>
 
-            <IconButton onClick={handleComment}>
-              <CommentIcon />
-            </IconButton>
+              <IconButton color="info" onClick={handleComment}>
+                <CommentIcon />
+              </IconButton>
+            </div>
+            <div>
+              {showChart && ( // graph line 
+                <div className="chart-container">
+                  {showChart && (
+                    // <VoiceGraph
+                    // data={chartData}
+                    // onUpdate={handleUpdateChart} />
+                    <div className="chart-container">
+                      {/* <VoiceGraph data={tempChartData} onUpdate={handleUpdateChart} /> */}
+                      <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
+
+                      <div className="chart-controls">
+
+                        <Tooltip title="Cancel" placement="bottom">
+                          <IconButton onClick={handleCancelChart} color="warning">
+                            <HighlightOffIcon />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title="Apply" placement="bottom">
+                          <IconButton onClick={handleApplyChart} color="primary">
+                            <CheckCircleOutlineIcon />
+                          </IconButton>
+                        </Tooltip>
+
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
           </div>
         )}
 
         <div className="comment-sidebar">
-          <h3>Comments</h3>
+          <h3>Comments & Voice Data</h3>
           <ul>
             {comments.map((comment, index) => (
               <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
@@ -282,12 +526,32 @@ const QuillEditor = () => {
                   <br />
                   <strong>Comment:</strong> {comment.comment}
                 </div>
-                <div style={{ display: "flex" }}>
-
-                  <IconButton onClick={() => handleEditComment(comment.id)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <div>
+                    <IconButton onClick={() => handleEditComment(comment.id)}>
+                      <EditIcon />
+                    </IconButton>
+                  </div>
+                  <div>
+                    <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </div>
+                </div>
+              </li>
+            ))}
+            {voiceData.map((voice, index) => (
+              <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
+                <div>
+                  <strong>{voice.label}</strong>
+                  <ul>
+                    {voice.values.map((value, i) => (
+                      <li key={i}>Time {i}s: {value}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <IconButton onClick={() => handleDeleteVoiceData(voice.id)}>
                     <DeleteIcon />
                   </IconButton>
                 </div>
@@ -301,4 +565,3 @@ const QuillEditor = () => {
 };
 
 export default QuillEditor;
-

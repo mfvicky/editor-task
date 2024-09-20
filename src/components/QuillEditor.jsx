@@ -87,14 +87,16 @@ const QuillEditor = () => {
   const [voiceData, setVoiceData] = useState([]); // New state for voice data
   const [tempChartData, setTempChartData] = useState([]);
   const [open, setOpen] = React.useState(false);
-
+  const [selectedText, setSelectedText] = useState('');
+  const [selectedTextData, setSelectedTextData] = useState([]);
   const handleUpdateChart = (index, newValue) => {
     console.log(index, newValue, 'vicky')
     const newValues = [...tempChartData.values];
     newValues[index] = newValue; // Update the value at the given index
     setTempChartData({ ...tempChartData, values: newValues });
   };
-  console.log(chartData, " - ", voiceData, " - ", tempChartData, "graph vicky ",)
+  console.log(chartData, " - ", voiceData, " - ", tempChartData, "graph vicky ")
+  console.log(voiceData, "voiceData vicky", selectedTextData)
   const handleShowChart = () => {
 
     setShowChart(!showChart); // graph line 
@@ -108,6 +110,7 @@ const QuillEditor = () => {
       label: `Voice Point ${voiceData.length + 1}`,
       values: tempChartData.values,
     };
+    setSelectedTextData([...selectedTextData, { id: newVoiceEntry.id, selectedText: selectedText }])
     setVoiceData([...voiceData, newVoiceEntry]);
     setChartData(tempChartData); // Update the main chart data
     // setChartVisible(false); // Hide the chart
@@ -157,6 +160,9 @@ const QuillEditor = () => {
         setToolbarPosition({ top: toolbarTop, left: toolbarLeft });
         setIsToolbarVisible(true);
         setSelectedRange(range);
+        const selected = editor.getText(range.index, range.length);
+        setSelectedText(selected);
+        console.log('Vicky Selected Text:', selected);
       } else {
         setIsToolbarVisible(false);
         setSelectedRange(null);
@@ -332,6 +338,12 @@ const QuillEditor = () => {
 
 
   console.log(comments, "comments")
+
+  const selectedTextKeyValue = selectedTextData.reduce((acc, item) => {
+    acc[item.id] = item;
+    return acc;
+  }, {});
+
   return (
     <div className="editor-container">
 
@@ -543,7 +555,7 @@ const QuillEditor = () => {
             {voiceData.map((voice, index) => (
               <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
-                  <strong>{voice.label}</strong>
+                  <strong>{voice.label} | {selectedTextKeyValue[voice.id].selectedText}</strong>
                   <ul style={{ fontSize: "small", padding: "4px", boxShadow: "none !important" }}>
                     {voice.values.map((value, i) => (
                       <li key={i}>Time {i}s: {value}</li>

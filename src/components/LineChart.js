@@ -43,6 +43,24 @@ const LineChart = ({ data, onUpdate }) => {
                         text: 'Voice modulation',
                     },
                 },
+                scales: {
+                    x: {
+                        type: 'category',
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)',
+                        },
+                    },
+                    y: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Amplitude',
+                        },
+                        min: 0,
+                        max: 100,
+                    },
+                }
             },
             // onHover: (event, chartElement) => {
             //     if (chartElement.length) {
@@ -62,18 +80,19 @@ const LineChart = ({ data, onUpdate }) => {
                     setDraggingIndex(chartElement[0].index); // Start dragging on click
                 }
             },
+            
         });
 
         const handleMouseMove = (e) => {
             if (draggingIndex !== null) {
-              const chartY = chartRef.current.getBoundingClientRect().top;
-              const chartHeight = chartRef.current.height;
-              const mouseY = e.clientY - chartY;
-              const newValue = ((1 - mouseY / chartHeight) * 100).toFixed(2); // Map mouseY to data range (0-100)
-      
-              onUpdate(draggingIndex, parseFloat(newValue));
+                const chartY = chartRef.current.getBoundingClientRect().top;
+                const chartHeight = chartRef.current.height;
+                const mouseY = e.clientY - chartY;
+                const newValue = ((1 - mouseY / chartHeight) * 100).toFixed(2); // Map mouseY to data range (0-100)
+
+                onUpdate(draggingIndex, parseFloat(newValue));
             }
-          };
+        };
 
         const handleMouseUp = () => {
             setDraggingIndex(null); // Stop dragging

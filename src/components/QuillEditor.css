@@ -83,9 +83,11 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
-.color-white{
-    color:#e0e0e0;
+
+.color-white {
+    color: #e0e0e0;
 }
+
 .inline-toolbar button:hover {
     margin-right: 8px;
     padding: 6px 12px;
@@ -268,12 +270,22 @@
     top: 0;
     width: 10px;
     height: 10px;
-    border: 1px solid green; /* Hollow dot */
-    background-color: transparent; /* Transparent background */
+    border: 1px solid green;
+    /* Hollow dot */
+    background-color: transparent;
+    /* Transparent background */
 }
 
 
-.chart-controls{
+.chart-controls {
     display: flex;
     justify-content: flex-end;
+}
+
+.comment-message {
+    display: block;
+}
+
+textarea {
+    color: #F9F9F3 !important;
 }

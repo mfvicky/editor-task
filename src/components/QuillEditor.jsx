@@ -19,7 +19,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { Popover, Tooltip, Typography } from '@mui/material';
+import { Popover, Tooltip, Typography, TextField, Badge } from '@mui/material';
 import DottedLineModule from './DottedLineModule';  // Assuming you moved the custom blot code here
 import LineChartIcon from '@mui/icons-material/ShowChart';
 import LineChart from './LineChart';
@@ -99,6 +99,19 @@ const QuillEditor = () => {
   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
   const popoverRef = useRef(null);
   const [deltaDataId, setDeltaDataId] = useState({});
+  const [showComment, setShowComment] = useState(false);
+  const [tempComment, setTempComment] = useState("");
+  const [tempCommentId, setTempCommentId] = useState(0);
+  const [inlineCommentList, setInlineCommentList] = useState([]);
+  console.log(inlineCommentList, "inlineCommentList");
+  const handleSetComment = (action, e) => {
+    switch (action) {
+      case 'add':
+        setTempComment(e.target.value)
+        setIsToolbarVisible(true);
+        break;
+    }
+  }
 
   const handleUpdateChart = (index, newValue) => {
     console.log(index, newValue, 'vicky')
@@ -169,6 +182,7 @@ const QuillEditor = () => {
 
     // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
+      console.log("handleSelectionChange ", range)
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
@@ -179,10 +193,22 @@ const QuillEditor = () => {
         const selected = editor.getText(range.index, range.length);
         setSelectedText(selected);
         console.log('Vicky Selected Text:', selected);
+        if (comments.length !== 0) {
+          const matchedComments = comments.filter((comment) => {
+            const commentRange = comment.range;
+            return (
+              // Check if the selection range overlaps with any comment range
+              (range.index <= commentRange.index + commentRange.length - 1) &&
+              (range.index + range.length - 1 >= commentRange.index)
+            );
+          });
+          setInlineCommentList(matchedComments);
+        }
       } else {
         setIsToolbarVisible(false);
-        setSelectedRange(null);
+        // setSelectedRange(null);
         removePopOverState(false)
+        // setInlineCommentList([])
       }
     };
 
@@ -259,7 +285,8 @@ const QuillEditor = () => {
 
           if (op.delete) {
             // Calculate the position where text is deleted
-            const deleteIndex = op.retain || 0;
+            // const deleteIndex = op.retain || 0;
+            const deleteIndex = editor.getSelection(true).index || 0;
             // const deleteIndex = editor.getSelection(true).index; // Get the affected range
             const deleteLength = op.delete; // Number of characters deleted
             const deleteEnd = deleteIndex + deleteLength;
@@ -409,6 +436,11 @@ const QuillEditor = () => {
   }, [comments]);
 
   useEffect(() => {
+    if (showComment === false)
+      setSelectedRange(null);
+  }, [showComment])
+
+  useEffect(() => {
     const editor = quillRef.current.getEditor();
     if (comments.length !== 0) {
       editor.root.addEventListener('click', handleTextClick);
@@ -430,16 +462,21 @@ const QuillEditor = () => {
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
     editor.format("bold", !isBold);
+    setIsToolbarVisible(true)
   };
 
   const handleItalic = () => {
     const editor = quillRef.current.getEditor();
     editor.format("italic", !isItalic);
+    setIsToolbarVisible(true)
+
   };
 
   const handleUnderline = () => {
     const editor = quillRef.current.getEditor();
     editor.format("underline", !isUnderline);
+    setIsToolbarVisible(true)
+
   };
 
   const handleRateChange = (e) => {
@@ -448,6 +485,8 @@ const QuillEditor = () => {
     editor.formatText(selectedRange.index, selectedRange.length, "background", color);
     setRateValue(e.target.value);
     setSelectedColor(color);
+    setIsToolbarVisible(true)
+
   };
 
   const handleHighlight = () => {
@@ -493,6 +532,8 @@ const QuillEditor = () => {
         setIsPopoverVisible(true);
       }
     }
+    console.log("handleSelectionChange 1212")
+    // setIsToolbarVisible(false);
   };
 
   // Function to wrap selected text in a <span> with an ID
@@ -557,42 +598,66 @@ const QuillEditor = () => {
   };
 
   const handleComment = () => {
-    const commentText = prompt("Add a comment:");
-    if (commentText && selectedRange) {
-      const editor = quillRef.current.getEditor();
-      const selectedText = editor.getText(selectedRange.index, selectedRange.length);
-      const color = `hsl(${rateValue}, 100%, 50%)`;
-      editor.formatText(selectedRange.index, selectedRange.length, "background", color);
+    console.log(tempComment, selectedRange, "vicky------------------------------")
+    // const commentText = prompt("Add a comment:");
+    const commentText = tempComment;
+    if (tempCommentId === 0) {
+      if (commentText && selectedRange) {
+        const editor = quillRef.current.getEditor();
+        const selectedText = editor.getText(selectedRange.index, selectedRange.length);
+        const color = `hsl(${rateValue}, 100%, 50%)`;
+        editor.formatText(selectedRange.index, selectedRange.length, "background", color);
 
-      const newComment = {
-        id: Date.now(),
-        text: selectedText,
-        comment: commentText,
-        range: selectedRange,
-        color,
-      };
-      // addCommentSpan(newComment.id)
-      setComments((prevComments) => [...prevComments, newComment]);
+        const newComment = {
+          id: Date.now(),
+          text: selectedText,
+          comment: commentText,
+          range: selectedRange,
+          color,
+        };
+        // addCommentSpan(newComment.id)
+        setComments((prevComments) => [...prevComments, newComment]);
+
+      }
+    } else if (tempCommentId !== 0) {
+      if (tempComment) {
+        setComments((prevComments) =>
+          prevComments.map((comment) =>
+            comment.id === tempCommentId ? { ...comment, comment: tempComment } : comment
+          )
+        );
+      }
     }
+    setShowComment(false);
+    setIsToolbarVisible(false);
+    setTempComment("");
+    setTempCommentId(0);
+
   };
 
   const handleEditComment = (commentId) => {
-    console.log(comments, "comment.find")
+
+    console.log(comments, "comment.find", commentId)
     const commentToEdit = comments.find((comment) => comment.id === commentId);
-    const updatedCommentText = prompt("Edit your comment:", commentToEdit.comment);
-    if (updatedCommentText) {
-      setComments((prevComments) =>
-        prevComments.map((comment) =>
-          comment.id === commentId ? { ...comment, comment: updatedCommentText } : comment
-        )
-      );
-    }
+    // const updatedCommentText = prompt("Edit your comment:", commentToEdit.comment);
+    setTempComment(commentToEdit.comment)
+    setIsToolbarVisible(true);
+    setShowComment(true);
+    setTempCommentId(commentId);
+    // if (updatedCommentText) {
+    //   setComments((prevComments) =>
+    //     prevComments.map((comment) =>
+    //       comment.id === commentId ? { ...comment, comment: updatedCommentText } : comment
+    //     )
+    //   );
+    // }
   };
 
   const handleDeleteComment = (commentId) => {
     const commentToDelete = comments.find((comment) => comment.id === commentId);
     setComments((prevComments) => prevComments.filter((comment) => comment.id !== commentId));
-    if (commentToDelete) {
+    setInlineCommentList((prevInlineComment) => prevInlineComment.filter((icomment) => icomment.id !== commentId));
+    if (commentToDelete && inlineCommentList.length <= 1) {
       const editor = quillRef.current.getEditor();
       editor.formatText(commentToDelete.range.index, commentToDelete.range.length, "background", false);
     }
@@ -826,7 +891,7 @@ const QuillEditor = () => {
 
 
 
-        {isToolbarVisible && (
+        {(isToolbarVisible || showComment) && (
           <div
             className="inline-toolbar"
             style={{
@@ -835,6 +900,7 @@ const QuillEditor = () => {
               position: "absolute",
               display: "block",
             }}
+          // onClick={() => setIsToolbarVisible(false)}
           >
             <div style={{ display: "flex" }}>
               <IconButton color="info" onClick={handleBold} className={isBold ? "active" : ""}>
@@ -875,11 +941,78 @@ const QuillEditor = () => {
                   marginTop: "4px"
                 }}
               ></div>
-
-              <IconButton color="info" onClick={handleComment}>
-                <CommentIcon />
+              <IconButton color="info" onClick={() => setShowComment(!showComment)}>
+                <Badge badgeContent={inlineCommentList.length} color="warning" variant="small">
+                  <CommentIcon />
+                </Badge>
               </IconButton>
             </div>
+            {showComment && <div className="comment-message">
+              <div>
+                {inlineCommentList.map((comment, index) => (
+                  <li key={index} style={{
+                    cursor: "pointer", display: "flex", justifyContent: "space-between",
+                    padding: "2px",
+                    marginTop: "5px",
+                    marginBottom: "5px",
+                    fontSize: "small"
+                  }} onClick={() => handleSelectComment(comment.range)}>
+                    <div>
+                      <strong>Text:</strong>{" "}
+                      <span>
+                        {comment.text}
+                      </span>
+                      <br />
+                      <strong>Comment:{comment.range.index} : {comment.range.length}</strong> {comment.comment}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <div>
+                        <IconButton onClick={() => {
+                          setIsToolbarVisible(false);
+                          setShowComment(false);
+                          handleEditComment(comment.id);
+                        }}>
+                          <EditIcon />
+                        </IconButton>
+                      </div>
+                      <div>
+                        <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </div>
+              <div>
+
+                <TextField
+                  id="outlined-Comment-static"
+                  label="Comment"
+                  multiline
+                  onChange={(e) => handleSetComment('add', e)}
+                  rows={4}
+                  sx={{ width: "100%", color: "#F9F9F3" }}
+                  defaultValue={tempComment}
+                  placeholder="Please enter your comment"
+                />
+              </div>
+              <div>
+
+              </div>
+              <div>
+                <Tooltip title="Cancel" placement="bottom">
+                  <IconButton onClick={() => { setIsToolbarVisible(false); setShowComment(false); setTempCommentId(0); setTempComment("") }} color="warning">
+                    <HighlightOffIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Confirm" placement="bottom">
+                  <IconButton color="primary" onClick={handleComment}>
+                    <CheckCircleOutlineIcon />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </div>}
             <div>
               {showChart && ( // graph line 
                 <div className="chart-container">

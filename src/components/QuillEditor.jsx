@@ -1085,9 +1085,9 @@ const QuillEditor = () => {
           </div>
         )}
         <div className="comment-sidebar">
-          <h3>Comments & Voice Data</h3>
+          <h3> Voice Data</h3>
           <ul>
-            {comments.map((comment, index) => (
+            {/* {comments.map((comment, index) => (
               <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
                 <div>
                   <strong>Text:</strong>{" "}
@@ -1110,14 +1110,14 @@ const QuillEditor = () => {
                   </div>
                 </div>
               </li>
-            ))}
+            ))} */}
             {voiceData.map((voice, index) => (
               <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
                   <strong>{voice.label} | {selectedTextKeyValue[voice.id].selectedText}</strong>
                   <ul style={{ fontSize: "small", padding: "4px", boxShadow: "none !important" }}>
                     {voice.values.map((value, i) => (
-                      <li key={i}>Time {i}s: {value}</li>
+                      <div style={{ padding: "5px" }} key={i}>Time {i}s: {value}</div>
                     ))}
                   </ul>
                 </div>

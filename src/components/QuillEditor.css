@@ -284,8 +284,30 @@
 
 .comment-message {
     display: block;
+    margin: 10px;
 }
 
 textarea {
     color: #F9F9F3 !important;
+}
+
+.inline-comment-list {
+
+    background-color: #2a2a2a;
+    border-left: 1px solid #3a3a3a;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.comment-list-div {
+    min-height: 20px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.action-btn-comment {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
 }

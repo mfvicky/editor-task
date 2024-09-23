@@ -103,11 +103,15 @@ const QuillEditor = () => {
   const [tempComment, setTempComment] = useState("");
   const [tempCommentId, setTempCommentId] = useState(0);
   const [inlineCommentList, setInlineCommentList] = useState([]);
+  const inlineCommentRef = useRef(null);
+
+
   console.log(inlineCommentList, "inlineCommentList");
   const handleSetComment = (action, e) => {
     switch (action) {
       case 'add':
         setTempComment(e.target.value)
+        e.target.value === '' && setTempCommentId(0)
         setIsToolbarVisible(true);
         break;
     }
@@ -126,6 +130,7 @@ const QuillEditor = () => {
 
     setShowChart(!showChart); // graph line 
     setTempChartData(chartData); // Use current chart data as temporary
+    setShowComment(false);
     // setChartVisible(true);
   };
 
@@ -635,6 +640,12 @@ const QuillEditor = () => {
 
   };
 
+  useEffect(() => {
+    if (tempCommentId !== 0 && inlineCommentRef.current) {
+      inlineCommentRef.current.focus();
+    }
+  }, [tempCommentId, tempComment])
+
   const handleEditComment = (commentId) => {
 
     console.log(comments, "comment.find", commentId)
@@ -644,6 +655,8 @@ const QuillEditor = () => {
     setIsToolbarVisible(true);
     setShowComment(true);
     setTempCommentId(commentId);
+    console.log(inlineCommentRef.current, "inlineCommentRef")
+
     // if (updatedCommentText) {
     //   setComments((prevComments) =>
     //     prevComments.map((comment) =>
@@ -941,66 +954,28 @@ const QuillEditor = () => {
                   marginTop: "4px"
                 }}
               ></div>
-              <IconButton color="info" onClick={() => setShowComment(!showComment)}>
+              <IconButton color="info" onClick={() => { setShowChart(false); setShowComment(!showComment) }}>
                 <Badge badgeContent={inlineCommentList.length} color="warning" variant="small">
                   <CommentIcon />
                 </Badge>
               </IconButton>
             </div>
             {showComment && <div className="comment-message">
-              <div>
-                {inlineCommentList.map((comment, index) => (
-                  <li key={index} style={{
-                    cursor: "pointer", display: "flex", justifyContent: "space-between",
-                    padding: "2px",
-                    marginTop: "5px",
-                    marginBottom: "5px",
-                    fontSize: "small"
-                  }} onClick={() => handleSelectComment(comment.range)}>
-                    <div>
-                      <strong>Text:</strong>{" "}
-                      <span>
-                        {comment.text}
-                      </span>
-                      <br />
-                      <strong>Comment:{comment.range.index} : {comment.range.length}</strong> {comment.comment}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <div>
-                        <IconButton onClick={() => {
-                          setIsToolbarVisible(false);
-                          setShowComment(false);
-                          handleEditComment(comment.id);
-                        }}>
-                          <EditIcon />
-                        </IconButton>
-                      </div>
-                      <div>
-                        <IconButton onClick={() => handleDeleteComment(comment.id)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </div>
-              <div>
+              <div style={{ marginBottom: "10px" }}>
 
                 <TextField
                   id="outlined-Comment-static"
                   label="Comment"
+                  inputRef={inlineCommentRef}
                   multiline
                   onChange={(e) => handleSetComment('add', e)}
-                  rows={4}
+                  rows={2}
                   sx={{ width: "100%", color: "#F9F9F3" }}
                   defaultValue={tempComment}
                   placeholder="Please enter your comment"
                 />
               </div>
-              <div>
-
-              </div>
-              <div>
+              <div className="action-btn-comment">
                 <Tooltip title="Cancel" placement="bottom">
                   <IconButton onClick={() => { setIsToolbarVisible(false); setShowComment(false); setTempCommentId(0); setTempComment("") }} color="warning">
                     <HighlightOffIcon />
@@ -1012,6 +987,52 @@ const QuillEditor = () => {
                   </IconButton>
                 </Tooltip>
               </div>
+              {inlineCommentList.length !== 0 && <div className="inline-comment-list">
+                <div className="comment-list-div">
+                  {inlineCommentList.map((comment, index) => (
+                    <li key={index} style={{
+                      cursor: "pointer", display: "flex", justifyContent: "space-between",
+                      padding: "2px",
+                      marginTop: "5px",
+                      marginBottom: "5px",
+                      fontSize: "small",
+                      backgroundColor: "#333333",
+                      borderRadius: "6px"
+                    }} onClick={() => handleSelectComment(comment.range)}>
+                      <div>
+                        <strong>Text:</strong>{" "}
+                        <span>
+                          {comment.text}
+                        </span>
+                        <br />
+                        <strong>Comment:{comment.range.index} : {comment.range.length}</strong> {comment.comment}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center" }}>
+                        <div>
+                          <IconButton onClick={() => {
+                            setIsToolbarVisible(false);
+                            setShowComment(false);
+                            handleEditComment(comment.id);
+                          }}>
+                            <EditIcon />
+                          </IconButton>
+                        </div>
+                        <div>
+                          <IconButton onClick={() => handleDeleteComment(comment.id)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </div>
+
+              </div>}
+
+              <div>
+
+              </div>
+
             </div>}
             <div>
               {showChart && ( // graph line 

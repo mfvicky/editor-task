@@ -29,7 +29,9 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
-
+import SpanWithIdBlot from './SpanWithIdBlot';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+// import './SpanWithIdBlot';
 // --- dot-dashed code ---
 // Register the custom blot for dotted-line paragraphs
 // const Block = Quill.import('blots/block');
@@ -44,6 +46,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 // DottedLineBlot.blotName = 'dottedLine';
 // DottedLineBlot.tagName = 'p';
 Quill.register(DottedLineModule);
+Quill.register(SpanWithIdBlot);
+
 // --- dot-dashed code end ---
 
 
@@ -78,6 +82,7 @@ const QuillEditor = () => {
   const [isHighlighted, setIsHighlighted] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showChart, setShowChart] = useState(false);
+
   const initialChartData = {
     labels: ['0s', '1s', '2s', '3s', '4s', '5s', '6s'], // Time labels
     values: [20, 15, 30, 25, 35, 30, 20], // Initial values for the chart
@@ -89,12 +94,19 @@ const QuillEditor = () => {
   const [open, setOpen] = React.useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [selectedTextData, setSelectedTextData] = useState([]);
+  const [popoverContent, setPopoverContent] = useState(''); // New state for popover content
+  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+  const popoverRef = useRef(null);
+  const [deltaDataId, setDeltaDataId] = useState({});
+
   const handleUpdateChart = (index, newValue) => {
     console.log(index, newValue, 'vicky')
     const newValues = [...tempChartData.values];
     newValues[index] = newValue; // Update the value at the given index
     setTempChartData({ ...tempChartData, values: newValues });
   };
+  console.log(deltaDataId, "vicky deltaDataId")
   console.log(chartData, " - ", voiceData, " - ", tempChartData, "graph vicky ")
   console.log(voiceData, "voiceData vicky", selectedTextData)
   const handleShowChart = () => {
@@ -134,7 +146,10 @@ const QuillEditor = () => {
     }
   };
 
+
+
   useEffect(() => {
+    // getSpeech();
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
     // --- dot-dashed code ---
@@ -151,6 +166,7 @@ const QuillEditor = () => {
         }
       });
     };
+
     // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
       if (range && range.length > 0) {
@@ -166,45 +182,220 @@ const QuillEditor = () => {
       } else {
         setIsToolbarVisible(false);
         setSelectedRange(null);
+        removePopOverState(false)
       }
     };
 
-    const handleTextChange = (delta, oldDelta, source) => {
-      console.log(editor.getContents(), editor.root.innerHTML, 'vicky')
-      if (source === "user") {
-        delta.ops.forEach((op) => {
-          if (op.delete) {
-            const affectedRangeStart = editor.getSelection(true).index;
-            const affectedRangeEnd = affectedRangeStart + op.delete;
 
-            setComments((prevComments) =>
-              prevComments.filter((comment) => {
-                const commentEnd = comment.range.index + comment.range.length;
-                if (
-                  (comment.range.index >= affectedRangeStart && comment.range.index <= affectedRangeEnd) ||
-                  (commentEnd >= affectedRangeStart && commentEnd <= affectedRangeEnd)
-                ) {
-                  editor.formatText(comment.range.index, comment.range.length, "background", false);
-                  return false; // remove comment
-                }
-                return true; // keep comment
-              })
-            );
+    const handleTextChange = (delta, oldDelta, source) => {
+      console.log(editor.getContents(), editor.root.innerHTML, 'vicky');
+      console.log("deltaToSSML: ", deltaToSSML(editor.getContents()));
+      console.log("old::", oldDelta, "new::", delta)
+      if (source === "user") {
+        let newComments = JSON.parse(JSON.stringify(comments)); // Copy existing comments
+        console.log(newComments, "newcomments vicky")
+        delta.ops.forEach((op) => {
+          // Handle text insertion
+          let currentLocationRetain = 0;
+          if (op.retain) {
+            currentLocationRetain = op.retain;
           }
+          if (op.insert) {
+            // const insertIndex = op.retain || 0;
+            const insertIndex = editor.getSelection(true).index || 0;
+
+            // Shift all comments after the insertion point forward
+            newComments = newComments.map((comment) => {
+              console.log(comment.range.index, insertIndex, editor.getSelection(true).index, newComments, op, currentLocationRetain, "old:: comment.range.index, >= ,insertIndex, oldDelta.ops,op ,currentLocationRetain")
+              if (comment.range.index >= insertIndex) {
+                return {
+                  ...comment,
+                  range: {
+                    ...comment.range,
+                    index: comment.range.index + op.insert.length, // Shift forward by inserted text length
+                  },
+                };
+              }
+              return comment;
+            });
+          }
+
+
+          console.log(newComments, "newcomments insert vicky")
+
+          // Handle text deletion
+          // if (op.delete) {
+          //   const deleteIndex = editor.getSelection(true).index; // Get the affected range
+          //   const deleteLength = op.delete; // Number of characters deleted
+          //   const deleteEnd = deleteIndex + deleteLength;
+
+          //   // Remove or adjust comments that are fully or partially deleted
+          //   newComments = newComments.filter((comment) => {
+          //     const commentEnd = comment.range.index + comment.range.length;
+          //     const isDeleted =
+          //       (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
+          //       (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
+
+          //     // Remove if it's fully deleted
+          //     if (isDeleted) {
+          //       editor.formatText(comment.range.index, comment.range.length, "background", false);
+          //       return false;
+          //     }
+
+          //     // Adjust the position of the comment if it's after the deleted text
+          //     if (comment.range.index >= deleteIndex) {
+          //       return {
+          //         ...comment,
+          //         range: {
+          //           ...comment.range,
+          //           index: Math.max(comment.range.index - deleteLength, deleteIndex), // Shift backward
+          //         },
+          //       };
+          //     }
+
+          //     return true; // Keep the comment unchanged if unaffected
+          //   });
+          // }
+
+          if (op.delete) {
+            // Calculate the position where text is deleted
+            const deleteIndex = op.retain || 0;
+            // const deleteIndex = editor.getSelection(true).index; // Get the affected range
+            const deleteLength = op.delete; // Number of characters deleted
+            const deleteEnd = deleteIndex + deleteLength;
+            // Adjust comments that appear after the deleted text by shifting their ranges backward
+            newComments = newComments.map((comment) => {
+              const commentEnd = comment.range.index + comment.range.length;
+              const isDeleted =
+                (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
+                (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
+              // if (isDeleted)
+              if (isDeleted) {
+                editor.formatText(comment.range.index, comment.range.length, "background", false);
+                return false;
+              }
+              console.log(isDeleted, "isDeleted---")
+              if (comment.range.index >= deleteIndex) {
+                return {
+                  ...comment,
+                  range: {
+                    ...comment.range,
+                    index: Math.max(comment.range.index - op.delete, deleteIndex), // Shift the comment's starting point backward
+                  },
+                };
+              }
+              return comment;
+            });
+          }
+
+          console.log(newComments, "comments delete asdasdasd------")
+
+          // Retain operations don't require any adjustments, so they can be skipped
         });
-        // --- dot-dashed code ---
+        console.log(newComments, "comments------")
+        setComments(newComments); // Update the state with the adjusted comments
+
         // Apply dotted-line formatting after content change
         applyDottedLineFormatting();
-        // --- dot-dashed code end ---
       }
 
+      // Update format state
       setIsBold(editor.getFormat().bold || false);
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     };
 
+    // const handleTextChange = (delta, oldDelta, source) => {
+    //   if (source === "user") {
+    //     let newComments = JSON.parse(JSON.stringify(comments)); // Copy existing comments
+
+    //     delta.ops.forEach((op, index) => {
+    //       const oldOp = oldDelta.ops[index]; // Get corresponding old operation
+
+    //       // Handle text insertion
+    //       if (op.insert) {
+    //         const insertIndex = op.retain || 0;
+    //         const insertLength = op.insert.length;
+
+    //         // Use oldDelta to see if text is being replaced
+    //         if (oldOp && oldOp.delete) {
+    //           const deletedLength = oldOp.delete;
+    //           // Adjust comments based on the replaced text
+    //           newComments = newComments.map((comment) => {
+    //             if (comment.range.index >= insertIndex) {
+    //               return {
+    //                 ...comment,
+    //                 range: {
+    //                   ...comment.range,
+    //                   index: comment.range.index + insertLength - deletedLength, // Shift forward by net length change (insert - delete)
+    //                 },
+    //               };
+    //             }
+    //             return comment;
+    //           });
+    //         } else {
+    //           // Shift all comments after the insertion point forward
+    //           newComments = newComments.map((comment) => {
+    //             if (comment.range.index >= insertIndex) {
+    //               return {
+    //                 ...comment,
+    //                 range: {
+    //                   ...comment.range,
+    //                   index: comment.range.index + insertLength, // Shift forward by inserted text length
+    //                 },
+    //               };
+    //             }
+    //             return comment;
+    //           });
+    //         }
+    //       }
+
+    //       // Handle text deletion (same as before, using oldDelta if needed)
+    //       if (op.delete) {
+    //         const deleteIndex = op.retain || 0;
+    //         const deleteLength = op.delete;
+    //         const deleteEnd = deleteIndex + deleteLength;
+
+    //         // Adjust comments based on deleted range
+    //         newComments = newComments.filter((comment) => {
+    //           const commentEnd = comment.range.index + comment.range.length;
+    //           const isDeleted =
+    //             (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
+    //             (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
+
+    //           if (isDeleted) {
+    //             editor.formatText(comment.range.index, comment.range.length, "background", false);
+    //             return false; // Remove the comment if fully deleted
+    //           }
+
+    //           if (comment.range.index >= deleteIndex) {
+    //             return {
+    //               ...comment,
+    //               range: {
+    //                 ...comment.range,
+    //                 index: Math.max(comment.range.index - deleteLength, deleteIndex), // Shift the comment's starting point backward
+    //               },
+    //             };
+    //           }
+
+    //           return comment;
+    //         });
+    //       }
+    //     });
+
+    //     setComments(newComments); // Update state with adjusted comments
+    //     applyDottedLineFormatting(); // Optional visual formatting
+    //   }
+
+    //   // Update format state
+    //   setIsBold(editor.getFormat().bold || false);
+    //   setIsItalic(editor.getFormat().italic || false);
+    //   setIsUnderline(editor.getFormat().underline || false);
+    // };
+
     editor.on("selection-change", handleSelectionChange);
     editor.on("text-change", handleTextChange);
+    editor.root.addEventListener('click', handleTextClick);
     // --- dot-dashed code ---
     // Apply dotted-line formatting on initial load
     applyDottedLineFormatting();
@@ -213,17 +404,28 @@ const QuillEditor = () => {
     return () => {
       editor.off("selection-change", handleSelectionChange);
       editor.off("text-change", handleTextChange);
+      editor.root.removeEventListener('click', handleTextClick);
     };
-  }, []);
+  }, [comments]);
 
   useEffect(() => {
-    // Add a class to the editor container based on dark mode state
-    if (isDarkMode) {
-      document.body.classList.add("dark-mode");
-    } else {
-      document.body.classList.remove("dark-mode");
+    const editor = quillRef.current.getEditor();
+    if (comments.length !== 0) {
+      editor.root.addEventListener('click', handleTextClick);
     }
-  }, [isDarkMode]);
+    return () => {
+      editor.root.removeEventListener('click', handleTextClick);
+    }
+  }, [comments])
+
+  // useEffect(() => {
+  // Add a class to the editor container based on dark mode state
+  // if (isDarkMode) {
+  //   document.body.classList.add("dark-mode");
+  // } else {
+  //   document.body.classList.remove("dark-mode");
+  // }
+  // }, [isDarkMode]);
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
@@ -262,6 +464,98 @@ const QuillEditor = () => {
     }
   };
 
+  console.log(popoverContent, popoverPosition, isPopoverVisible, 'vicky popover')
+  function handleTextClick(e) {
+    const target = e.target;
+    // const spanElement = document.querySelector(target);
+    const dataId = target.getAttribute('data-id');
+    console.log(target, "targe vicky", target.dataid, target.tagName, Number(dataId));
+
+    if (target.tagName === 'SPAN' && dataId) {
+      const comment = comments.find((c) => c.id === Number(dataId));
+      console.log(comment, "comment,vicky", comments)
+      if (comment) {
+        // Show the popover with the comment
+        setPopoverContent(comment.text + " | " + comment.comment);
+        // const rect = target.getBoundingClientRect();
+        // const position = {
+        //   top: rect.top + e.scrollY, // Adjust for scrolling
+        //   left: rect.left + e.scrollX,
+        // };
+        const editor = quillRef.current.getEditor();
+        const range = editor.getSelection();
+        const bounds = editor.getBounds(range.index);
+        const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
+        const toolbarLeft = bounds.left;
+        // setPopoverPosition({ top: e.clientY, left: e.clientX });
+        console.log()
+        setPopoverPosition({ top: toolbarTop, left: toolbarLeft })
+        setIsPopoverVisible(true);
+      }
+    }
+  };
+
+  // Function to wrap selected text in a <span> with an ID
+  const addCommentSpan = (commentId) => {
+    const editor = quillRef.current.getEditor();
+    const range = editor.getSelection();
+    if (range && range.length > 0) {
+      const selectedText = editor.getText(range.index, range.length);
+      const delta = editor.getContents(); // Get current Delta operations
+      console.log(delta, "vicky,editor")
+      let _deltaDataId = {};
+      let newDataIdObject = {};
+      // delta.ops.forEach((op) => {
+      //   if (op.insert && op.insert.includes(selectedText)) {
+      //     op.attributes = {
+      //       ...op.attributes,
+      //       'data-id': commentId,
+      //     };
+      //     newDataIdObject = op
+
+      //   }
+      // });
+      // if (Object.keys(deltaDataId).length === 0) {
+      //   _deltaDataId = JSON.parse(JSON.stringify(delta));
+      //   console.log("deltaDataId is empty");
+      // } else {
+      //   _deltaDataId = JSON.parse(JSON.stringify(deltaDataId))
+      //   console.log("deltaDataId is not empty");
+      //   _deltaDataId.ops.forEach((op) => {
+      //     if (op.insert && op.insert.includes(selectedText)) {
+      //       op = newDataIdObject
+      //     }
+      //   });
+      // }
+      // setDeltaDataId(_deltaDataId);
+
+
+      let editorHTML = editor.root.innerHTML;
+      const escapedText = selectedText.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&'); // Escape special regex chars
+      const regex = new RegExp(`(${escapedText})`, 'g');
+
+      // Only replace the first instance of the selected text
+      editorHTML = editorHTML.replace(regex, `<span data-id="${commentId}">$1</span>`);
+      // editor.format('spanWithId', commentId);
+      // editor.formatText(range.index, range.length, 'spanWithId', commentId);
+
+      editor.format('spanWithId', commentId);
+      editor.root.innerHTML = editorHTML;
+      // Set the updated innerHTML back into the editor
+      // Add a span tag with the commentId as the ID
+      // const spanHtml = `<span id="${commentId}">${selectedText}</span>`;
+
+      // Replace the selected text with the span tag
+      // editor.clipboard.dangerouslyPasteHTML(range.index, spanHtml);
+
+      // // Add the comment to the comments state
+      // setComments((prevComments) => [
+      //   ...prevComments,
+      //   { id: commentId, text: selectedText, range }
+      // ]);
+    }
+  };
+
   const handleComment = () => {
     const commentText = prompt("Add a comment:");
     if (commentText && selectedRange) {
@@ -277,7 +571,7 @@ const QuillEditor = () => {
         range: selectedRange,
         color,
       };
-
+      // addCommentSpan(newComment.id)
       setComments((prevComments) => [...prevComments, newComment]);
     }
   };
@@ -344,6 +638,100 @@ const QuillEditor = () => {
     return acc;
   }, {});
 
+  function deltaToSSML(delta) {
+    // Helper function to apply SSML tags based on attributes
+    const applySSMLTags = (text, attributes) => {
+      let result = text;
+
+      // Bold text is emphasized
+      if (attributes?.bold) {
+        result = `<emphasis level="strong">${result}</emphasis>`;
+      }
+
+      // Italic text gets moderate emphasis
+      if (attributes?.italic) {
+        result = `<emphasis level="moderate">${result}</emphasis>`;
+      }
+
+      // Apply other SSML tags based on delta attributes (e.g., prosody for rate, pitch)
+      if (attributes?.rate) {
+        result = `<prosody rate="${attributes.rate}">${result}</prosody>`;
+      }
+
+      if (attributes?.volume) {
+        result = `<prosody volume="${attributes.volume}">${result}</prosody>`;
+      }
+
+      // Add more SSML attributes as needed (underline, color, etc.)
+
+      return result;
+    };
+
+    // Start SSML document
+    let ssml = '<speak>';
+
+    // Iterate over the delta operations
+    delta.ops.forEach(op => {
+      if (op.insert) {
+        // Handle plain text insertion
+        if (typeof op.insert === 'string') {
+          ssml += applySSMLTags(op.insert, op.attributes);
+        }
+
+        // Handle breaks (like new lines or pauses)
+        if (op.insert === '\n') {
+          ssml += '<break time="500ms" />';
+        }
+      }
+    });
+
+    // Close SSML document
+    ssml += '</speak>';
+
+    return ssml;
+  }
+
+  function getSpeech() {
+    const utterance = new SpeechSynthesisUtterance();
+
+    const ssmlText = `
+  <speak>
+    Hello! This is a <emphasis level="strong">test</emphasis>.
+    <break time="500ms"/> How are you doing today?
+  </speak>
+`;
+
+    // Since SSML isn't fully supported in Chrome, use plain text for now
+    // utterance.text = "Hello! This is a test. How are you doing today?";
+    utterance.text = ssmlText;
+    // Set pitch, rate, and volume
+    utterance.pitch = 1;
+    utterance.rate = 1;
+    utterance.volume = 1;
+
+    // Play the audio using the Web Speech API
+    window.speechSynthesis.speak(utterance);
+  }
+
+  const removePopOverState = () => {
+
+    setIsPopoverVisible(false);
+    setPopoverContent("")
+    setPopoverPosition({ top: 0, left: 0 });
+
+  };
+
+  // useEffect(() => {
+  //   if (isPopoverVisible) {
+  //     document.addEventListener('mousedown', handleClickOutside);
+  //   } else {
+  //     document.removeEventListener('mousedown', handleClickOutside);
+  //   }
+  //   return () => {
+  //     document.removeEventListener('mousedown', handleClickOutside); // Cleanup listener on unmount
+  //   };
+  // }, [isPopoverVisible]);
+
   return (
     <div className="editor-container">
 
@@ -403,6 +791,9 @@ const QuillEditor = () => {
         </IconButton>
         <IconButton onClick={handleHighlight}>
           <FormatColorFillIcon />
+        </IconButton>
+        <IconButton onClick={getSpeech}>
+          <PlayCircleOutlineIcon />
         </IconButton>
         {/* <IconButton onClick={handleToggleDarkMode}>
           {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
@@ -524,7 +915,21 @@ const QuillEditor = () => {
 
           </div>
         )}
+        {isPopoverVisible && (
+          <div
+            // ref={popoverRef}
+            className="inline-toolbar"
+            style={{
+              top: `${toolbarPosition.top}px`,
+              left: `${toolbarPosition.left}px`,
+              position: "absolute",
+              display: "block",
+              // backgroundColor:"#3b3a3a"
+            }}>
 
+            {popoverContent}
+          </div>
+        )}
         <div className="comment-sidebar">
           <h3>Comments & Voice Data</h3>
           <ul>
@@ -536,7 +941,7 @@ const QuillEditor = () => {
                     {comment.text}
                   </span>
                   <br />
-                  <strong>Comment:</strong> {comment.comment}
+                  <strong>Comment:{comment.range.index} : {comment.range.length}</strong> {comment.comment}
                 </div>
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <div>

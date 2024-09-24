@@ -3,6 +3,7 @@ import Quill from 'quill';
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./QuillEditor.css";
+// all icons
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -12,39 +13,21 @@ import CommentIcon from '@mui/icons-material/Comment';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Slider from '@mui/material/Slider';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/IconButton';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { Popover, Tooltip, Typography, TextField, Badge } from '@mui/material';
-import DottedLineModule from './DottedLineModule';  // Assuming you moved the custom blot code here
 import LineChartIcon from '@mui/icons-material/ShowChart';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+
+import { IconButton, Popover, Tooltip, Typography, TextField, Badge, Button, Slider, } from '@mui/material';
+
+import DottedLineModule from './DottedLineModule';
 import LineChart from './LineChart';
 import VoiceGraph from './VoiceGraph';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
 import SpanWithIdBlot from './SpanWithIdBlot';
-import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-// import './SpanWithIdBlot';
-// --- dot-dashed code ---
-// Register the custom blot for dotted-line paragraphs
-// const Block = Quill.import('blots/block');
-// class DottedLineBlot extends Block {
-//   static create() {
-//     const node = super.create();
-//     node.classList.add('dotted-line-paragraph');
-//     return node;
-//   }
-// }
 
-// DottedLineBlot.blotName = 'dottedLine';
-// DottedLineBlot.tagName = 'p';
+
 Quill.register(DottedLineModule);
 Quill.register(SpanWithIdBlot);
 
@@ -87,11 +70,12 @@ const QuillEditor = () => {
     labels: ['0s', '1s', '2s', '3s', '4s', '5s', '6s'], // Time labels
     values: [20, 15, 30, 25, 35, 30, 20], // Initial values for the chart
   };
-  const [chartVisible, setChartVisible] = useState(false);
+
+
   const [chartData, setChartData] = useState(initialChartData);
   const [voiceData, setVoiceData] = useState([]); // New state for voice data
   const [tempChartData, setTempChartData] = useState([]);
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [selectedTextData, setSelectedTextData] = useState([]);
   const [popoverContent, setPopoverContent] = useState(''); // New state for popover content
@@ -106,7 +90,7 @@ const QuillEditor = () => {
   const inlineCommentRef = useRef(null);
 
 
-  console.log(inlineCommentList, "inlineCommentList");
+
   const handleSetComment = (action, e) => {
     switch (action) {
       case 'add':
@@ -118,20 +102,17 @@ const QuillEditor = () => {
   }
 
   const handleUpdateChart = (index, newValue) => {
-    console.log(index, newValue, 'vicky')
     const newValues = [...tempChartData.values];
     newValues[index] = newValue; // Update the value at the given index
     setTempChartData({ ...tempChartData, values: newValues });
   };
-  console.log(deltaDataId, "vicky deltaDataId")
-  console.log(chartData, " - ", voiceData, " - ", tempChartData, "graph vicky ")
-  console.log(voiceData, "voiceData vicky", selectedTextData)
+
   const handleShowChart = () => {
 
     setShowChart(!showChart); // graph line 
     setTempChartData(chartData); // Use current chart data as temporary
     setShowComment(false);
-    // setChartVisible(true);
+
   };
 
   const handleApplyChart = () => {
@@ -143,7 +124,7 @@ const QuillEditor = () => {
     setSelectedTextData([...selectedTextData, { id: newVoiceEntry.id, selectedText: selectedText }])
     setVoiceData([...voiceData, newVoiceEntry]);
     setChartData(tempChartData); // Update the main chart data
-    // setChartVisible(false); // Hide the chart
+
     setShowChart(false);
     setIsToolbarVisible(false);
     highlightSelectedText(); // Highlight the selected text
@@ -154,7 +135,7 @@ const QuillEditor = () => {
     setShowChart(false);
     setIsToolbarVisible(false);
     setTempChartData(chartData); // Reset to original chart data
-    // setChartVisible(false); // Hide the chart without saving
+
   };
 
   const highlightSelectedText = () => {
@@ -187,7 +168,7 @@ const QuillEditor = () => {
 
     // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
-      console.log("handleSelectionChange ", range)
+
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
@@ -197,16 +178,24 @@ const QuillEditor = () => {
         setSelectedRange(range);
         const selected = editor.getText(range.index, range.length);
         setSelectedText(selected);
-        console.log('Vicky Selected Text:', selected);
+
         if (comments.length !== 0) {
           const matchedComments = comments.filter((comment) => {
-            const commentRange = comment.range;
+            const commentRange = comment?.range;
             return (
               // Check if the selection range overlaps with any comment range
-              (range.index <= commentRange.index + commentRange.length - 1) &&
-              (range.index + range.length - 1 >= commentRange.index)
+              (range?.index <= commentRange?.index + commentRange?.length - 1) &&
+              (range?.index + range?.length - 1 >= commentRange?.index)
             );
           });
+          // const matchedCommentsVoiceData = voiceData.filter((voice) => {
+          //   const commentRange = voice.range;
+          //   return (
+          //     // Check if the selection range overlaps with any comment range
+          //     (range.index <= commentRange.index + commentRange.length - 1) &&
+          //     (range.index + range.length - 1 >= commentRange.index)
+          //   );
+          // });
           setInlineCommentList(matchedComments);
         }
       } else {
@@ -219,12 +208,10 @@ const QuillEditor = () => {
 
 
     const handleTextChange = (delta, oldDelta, source) => {
-      console.log(editor.getContents(), editor.root.innerHTML, 'vicky');
-      console.log("deltaToSSML: ", deltaToSSML(editor.getContents()));
-      console.log("old::", oldDelta, "new::", delta)
+
       if (source === "user") {
         let newComments = JSON.parse(JSON.stringify(comments)); // Copy existing comments
-        console.log(newComments, "newcomments vicky")
+
         delta.ops.forEach((op) => {
           // Handle text insertion
           let currentLocationRetain = 0;
@@ -237,13 +224,13 @@ const QuillEditor = () => {
 
             // Shift all comments after the insertion point forward
             newComments = newComments.map((comment) => {
-              console.log(comment.range.index, insertIndex, editor.getSelection(true).index, newComments, op, currentLocationRetain, "old:: comment.range.index, >= ,insertIndex, oldDelta.ops,op ,currentLocationRetain")
-              if (comment.range.index >= insertIndex) {
+
+              if (comment?.range?.index >= insertIndex) {
                 return {
                   ...comment,
                   range: {
                     ...comment.range,
-                    index: comment.range.index + op.insert.length, // Shift forward by inserted text length
+                    index: comment?.range?.index + op.insert.length, // Shift forward by inserted text length
                   },
                 };
               }
@@ -252,7 +239,7 @@ const QuillEditor = () => {
           }
 
 
-          console.log(newComments, "newcomments insert vicky")
+
 
           // Handle text deletion
           // if (op.delete) {
@@ -297,22 +284,23 @@ const QuillEditor = () => {
             const deleteEnd = deleteIndex + deleteLength;
             // Adjust comments that appear after the deleted text by shifting their ranges backward
             newComments = newComments.map((comment) => {
-              const commentEnd = comment.range.index + comment.range.length;
+
+              const commentEnd = comment?.range?.index + comment?.range?.length;
               const isDeleted =
-                (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
+                (comment?.range?.index >= deleteIndex && comment?.range?.index <= deleteEnd) ||
                 (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
               // if (isDeleted)
               if (isDeleted) {
-                editor.formatText(comment.range.index, comment.range.length, "background", false);
+                editor.formatText(comment?.range?.index, comment?.range?.length, "background", false);
                 return false;
               }
-              console.log(isDeleted, "isDeleted---")
-              if (comment.range.index >= deleteIndex) {
+
+              if (comment?.range?.index >= deleteIndex) {
                 return {
                   ...comment,
                   range: {
-                    ...comment.range,
-                    index: Math.max(comment.range.index - op.delete, deleteIndex), // Shift the comment's starting point backward
+                    ...comment?.range,
+                    index: Math.max(comment?.range?.index - op.delete, deleteIndex), // Shift the comment's starting point backward
                   },
                 };
               }
@@ -320,14 +308,12 @@ const QuillEditor = () => {
             });
           }
 
-          console.log(newComments, "comments delete asdasdasd------")
+
 
           // Retain operations don't require any adjustments, so they can be skipped
         });
-        console.log(newComments, "comments------")
-        setComments(newComments); // Update the state with the adjusted comments
-
-        // Apply dotted-line formatting after content change
+        newComments = newComments.filter(item => typeof item === 'object' && item !== null);
+        setComments(newComments); 
         applyDottedLineFormatting();
       }
 
@@ -441,8 +427,10 @@ const QuillEditor = () => {
   }, [comments]);
 
   useEffect(() => {
-    if (showComment === false)
+    if (showComment === false) {
       setSelectedRange(null);
+      clearCommentStates();
+    }
   }, [showComment])
 
   useEffect(() => {
@@ -508,16 +496,16 @@ const QuillEditor = () => {
     }
   };
 
-  console.log(popoverContent, popoverPosition, isPopoverVisible, 'vicky popover')
+
   function handleTextClick(e) {
     const target = e.target;
     // const spanElement = document.querySelector(target);
     const dataId = target.getAttribute('data-id');
-    console.log(target, "targe vicky", target.dataid, target.tagName, Number(dataId));
+
 
     if (target.tagName === 'SPAN' && dataId) {
       const comment = comments.find((c) => c.id === Number(dataId));
-      console.log(comment, "comment,vicky", comments)
+
       if (comment) {
         // Show the popover with the comment
         setPopoverContent(comment.text + " | " + comment.comment);
@@ -532,12 +520,12 @@ const QuillEditor = () => {
         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
         const toolbarLeft = bounds.left;
         // setPopoverPosition({ top: e.clientY, left: e.clientX });
-        console.log()
+
         setPopoverPosition({ top: toolbarTop, left: toolbarLeft })
         setIsPopoverVisible(true);
       }
     }
-    console.log("handleSelectionChange 1212")
+
     // setIsToolbarVisible(false);
   };
 
@@ -548,7 +536,7 @@ const QuillEditor = () => {
     if (range && range.length > 0) {
       const selectedText = editor.getText(range.index, range.length);
       const delta = editor.getContents(); // Get current Delta operations
-      console.log(delta, "vicky,editor")
+
       let _deltaDataId = {};
       let newDataIdObject = {};
       // delta.ops.forEach((op) => {
@@ -603,8 +591,7 @@ const QuillEditor = () => {
   };
 
   const handleComment = () => {
-    console.log(tempComment, selectedRange, "vicky------------------------------")
-    // const commentText = prompt("Add a comment:");
+
     const commentText = tempComment;
     if (tempCommentId === 0) {
       if (commentText && selectedRange) {
@@ -633,37 +620,28 @@ const QuillEditor = () => {
         );
       }
     }
+    clearCommentStates();
+
+  };
+
+  const clearCommentStates = () => {
     setShowComment(false);
     setIsToolbarVisible(false);
     setTempComment("");
     setTempCommentId(0);
-
-  };
-
+  }
   useEffect(() => {
     if (tempCommentId !== 0 && inlineCommentRef.current) {
       inlineCommentRef.current.focus();
     }
   }, [tempCommentId, tempComment])
-
+  
   const handleEditComment = (commentId) => {
-
-    console.log(comments, "comment.find", commentId)
     const commentToEdit = comments.find((comment) => comment.id === commentId);
-    // const updatedCommentText = prompt("Edit your comment:", commentToEdit.comment);
     setTempComment(commentToEdit.comment)
     setIsToolbarVisible(true);
     setShowComment(true);
     setTempCommentId(commentId);
-    console.log(inlineCommentRef.current, "inlineCommentRef")
-
-    // if (updatedCommentText) {
-    //   setComments((prevComments) =>
-    //     prevComments.map((comment) =>
-    //       comment.id === commentId ? { ...comment, comment: updatedCommentText } : comment
-    //     )
-    //   );
-    // }
   };
 
   const handleDeleteComment = (commentId) => {
@@ -680,6 +658,7 @@ const QuillEditor = () => {
     const editor = quillRef.current.getEditor();
     editor.setSelection(range.index, range.length);
   };
+
   const handleToggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
@@ -709,7 +688,7 @@ const QuillEditor = () => {
   };
 
 
-  console.log(comments, "comments")
+
 
   const selectedTextKeyValue = selectedTextData.reduce((acc, item) => {
     acc[item.id] = item;
@@ -813,53 +792,6 @@ const QuillEditor = () => {
   return (
     <div className="editor-container">
 
-
-      {/* <Dialog
-        open={showChart}
-        onClose={handleClose}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title" sx={{ backgroundColor: "#1e1e1e", color: "#e0e0e0" }}>
-          Change text voice modulation
-        </DialogTitle>
-        <DialogContent sx={{ backgroundColor: "#1e1e1e" }}>
-          <DialogContentText id="alert-dialog-description">
-            {showChart && ( // graph line 
-              <div className="chart-container">
-                {showChart && (
-                 
-                  <div className="chart-container">
-                    <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
-
-                    <div className="chart-controls">
-
-                      <Tooltip title="Cancel" placement="bottom">
-                        <IconButton onClick={handleCancelChart} color="warning">
-                          <HighlightOffIcon />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title="Apply" placement="bottom">
-                        <IconButton onClick={handleApplyChart} color="primary">
-                          <CheckCircleOutlineIcon />
-                        </IconButton>
-                      </Tooltip>
-
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelChart} size="small">Cancel</Button>
-          <Button onClick={handleApplyChart} size="small" autoFocus>
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog> */}
       <div className="custom-toolbar">
         <IconButton onClick={() => quillRef.current.getEditor().history.undo()}>
           <UndoIcon />
@@ -977,7 +909,7 @@ const QuillEditor = () => {
               </div>
               <div className="action-btn-comment">
                 <Tooltip title="Cancel" placement="bottom">
-                  <IconButton onClick={() => { setIsToolbarVisible(false); setShowComment(false); setTempCommentId(0); setTempComment("") }} color="warning">
+                  <IconButton onClick={() => clearCommentStates()} color="warning">
                     <HighlightOffIcon />
                   </IconButton>
                 </Tooltip>
@@ -1005,7 +937,7 @@ const QuillEditor = () => {
                           {comment.text}
                         </span>
                         <br />
-                        <strong>Comment:{comment.range.index} : {comment.range.length}</strong> {comment.comment}
+                        <strong>Comment:{comment?.range?.index} : {comment?.range?.length}</strong> {comment.comment}
                       </div>
                       <div style={{ display: "flex", alignItems: "center" }}>
                         <div>
@@ -1066,7 +998,6 @@ const QuillEditor = () => {
               )}
 
             </div>
-
           </div>
         )}
         {isPopoverVisible && (

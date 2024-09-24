@@ -22,10 +22,10 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 
 import { IconButton, Popover, Tooltip, Typography, TextField, Badge, Button, Slider, } from '@mui/material';
 
-import DottedLineModule from './DottedLineModule';
-import LineChart from './LineChart';
-import VoiceGraph from './VoiceGraph';
-import SpanWithIdBlot from './SpanWithIdBlot';
+import DottedLineModule from './custom/DottedLineModule';
+import LineChart from './custom/LineChart';
+import VoiceGraph from './custom/VoiceGraph';
+import SpanWithIdBlot from './custom/SpanWithIdBlot';
 
 
 Quill.register(DottedLineModule);

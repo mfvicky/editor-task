@@ -87,6 +87,7 @@ const QuillEditor = () => {
   const [tempComment, setTempComment] = useState("");
   const [tempCommentId, setTempCommentId] = useState(0);
   const [inlineCommentList, setInlineCommentList] = useState([]);
+  const [inlineVoiceList, setInlineVoiceList] = useState([]);
   const inlineCommentRef = useRef(null);
 
 
@@ -115,9 +116,11 @@ const QuillEditor = () => {
 
   };
 
+
   const handleApplyChart = () => {
     const newVoiceEntry = {
       id: Date.now(),
+      range: { ...selectedRange },
       label: `Voice Point ${voiceData.length + 1}`,
       values: tempChartData.values,
     };
@@ -171,8 +174,9 @@ const QuillEditor = () => {
 
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
+        console.log(bounds, 'vicky bounds')
         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
-        const toolbarLeft = bounds.left;
+        const toolbarLeft = bounds.left - 200;
         setToolbarPosition({ top: toolbarTop, left: toolbarLeft });
         setIsToolbarVisible(true);
         setSelectedRange(range);
@@ -188,15 +192,20 @@ const QuillEditor = () => {
               (range?.index + range?.length - 1 >= commentRange?.index)
             );
           });
-          // const matchedCommentsVoiceData = voiceData.filter((voice) => {
-          //   const commentRange = voice.range;
-          //   return (
-          //     // Check if the selection range overlaps with any comment range
-          //     (range.index <= commentRange.index + commentRange.length - 1) &&
-          //     (range.index + range.length - 1 >= commentRange.index)
-          //   );
-          // });
+
           setInlineCommentList(matchedComments);
+        }
+        if (voiceData.length !== 0) {
+
+          const matchedCommentsVoiceData = voiceData.filter((voice) => {
+            const voiceRange = voice.range;
+            return (
+              // Check if the selection range overlaps with any comment range
+              (range.index <= voiceRange.index + voiceRange.length - 1) &&
+              (range.index + range.length - 1 >= voiceRange.index)
+            );
+          });
+          setInlineVoiceList(matchedCommentsVoiceData);
         }
       } else {
         setIsToolbarVisible(false);
@@ -211,7 +220,7 @@ const QuillEditor = () => {
 
       if (source === "user") {
         let newComments = JSON.parse(JSON.stringify(comments)); // Copy existing comments
-
+        let newVoiceData = JSON.parse(JSON.stringify(voiceData));
         delta.ops.forEach((op) => {
           // Handle text insertion
           let currentLocationRetain = 0;
@@ -235,6 +244,19 @@ const QuillEditor = () => {
                 };
               }
               return comment;
+            });
+            newVoiceData = newVoiceData.map((voice) => {
+
+              if (voice?.range?.index >= insertIndex) {
+                return {
+                  ...voice,
+                  range: {
+                    ...voice.range,
+                    index: voice?.range?.index + op.insert.length, // Shift forward by inserted text length
+                  },
+                };
+              }
+              return voice;
             });
           }
 
@@ -306,6 +328,29 @@ const QuillEditor = () => {
               }
               return comment;
             });
+
+            newVoiceData = newVoiceData.map((voice) => {
+              const voiceEnd = voice?.range?.index + voice?.range?.length;
+              const isDeleted =
+                (voice?.range?.index >= deleteIndex && voice?.range?.index <= deleteEnd) ||
+                (voiceEnd >= deleteIndex && voiceEnd <= deleteEnd);
+              // if (isDeleted)
+              if (isDeleted) {
+                editor.formatText(voice?.range?.index, voice?.range?.length, "background", false);
+                return false;
+              }
+
+              if (voice?.range?.index >= deleteIndex) {
+                return {
+                  ...voice,
+                  range: {
+                    ...voice?.range,
+                    index: Math.max(voice?.range?.index - op.delete, deleteIndex), // Shift the voice's starting point backward
+                  },
+                };
+              }
+              return voice;
+            });
           }
 
 
@@ -313,7 +358,9 @@ const QuillEditor = () => {
           // Retain operations don't require any adjustments, so they can be skipped
         });
         newComments = newComments.filter(item => typeof item === 'object' && item !== null);
-        setComments(newComments); 
+        newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
+        setVoiceData(newVoiceData);
+        setComments(newComments);
         applyDottedLineFormatting();
       }
 
@@ -322,6 +369,7 @@ const QuillEditor = () => {
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     };
+    
 
     // const handleTextChange = (delta, oldDelta, source) => {
     //   if (source === "user") {
@@ -424,12 +472,11 @@ const QuillEditor = () => {
       editor.off("text-change", handleTextChange);
       editor.root.removeEventListener('click', handleTextClick);
     };
-  }, [comments]);
+  }, [comments, voiceData]);
 
   useEffect(() => {
     if (showComment === false) {
       setSelectedRange(null);
-      clearCommentStates();
     }
   }, [showComment])
 
@@ -442,7 +489,8 @@ const QuillEditor = () => {
       editor.root.removeEventListener('click', handleTextClick);
     }
   }, [comments])
-
+  console.log(voiceData,"VoiceData vicky")
+  console.log(comments,"comments vicky")
   // useEffect(() => {
   // Add a class to the editor container based on dark mode state
   // if (isDarkMode) {
@@ -635,7 +683,7 @@ const QuillEditor = () => {
       inlineCommentRef.current.focus();
     }
   }, [tempCommentId, tempComment])
-  
+
   const handleEditComment = (commentId) => {
     const commentToEdit = comments.find((comment) => comment.id === commentId);
     setTempComment(commentToEdit.comment)
@@ -675,6 +723,7 @@ const QuillEditor = () => {
 
   const handleDeleteVoiceData = (voiceId) => {
     setVoiceData((prevVoiceData) => prevVoiceData.filter((voice) => voice.id !== voiceId));
+    setInlineVoiceList((prevVoiceData) => prevVoiceData.filter((voice) => voice.id !== voiceId));
   };
 
 
@@ -859,7 +908,9 @@ const QuillEditor = () => {
               </IconButton>
               {/* <IconButton onClick={handleShowChart}> */}
               <IconButton color="info" className="color-white" onClick={handleShowChart}>
-                <LineChartIcon />
+                <Badge badgeContent={inlineVoiceList.length} color="warning" variant="small">
+                  <LineChartIcon />
+                </Badge>
               </IconButton>
 
               <label style={{ marginLeft: '10px' }}>
@@ -893,6 +944,18 @@ const QuillEditor = () => {
               </IconButton>
             </div>
             {showComment && <div className="comment-message">
+              <div className="action-btn-comment">
+                <Tooltip title="Cancel" placement="bottom">
+                  <IconButton onClick={() => clearCommentStates()} color="warning">
+                    <HighlightOffIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Confirm" placement="bottom">
+                  <IconButton color="primary" onClick={handleComment}>
+                    <CheckCircleOutlineIcon />
+                  </IconButton>
+                </Tooltip>
+              </div>
               <div style={{ marginBottom: "10px" }}>
 
                 <TextField
@@ -907,21 +970,10 @@ const QuillEditor = () => {
                   placeholder="Please enter your comment"
                 />
               </div>
-              <div className="action-btn-comment">
-                <Tooltip title="Cancel" placement="bottom">
-                  <IconButton onClick={() => clearCommentStates()} color="warning">
-                    <HighlightOffIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Confirm" placement="bottom">
-                  <IconButton color="primary" onClick={handleComment}>
-                    <CheckCircleOutlineIcon />
-                  </IconButton>
-                </Tooltip>
-              </div>
+
               {inlineCommentList.length !== 0 && <div className="inline-comment-list">
                 <div className="comment-list-div">
-                  {inlineCommentList.map((comment, index) => (
+                  {inlineCommentList.sort((a, b) => b.id - a.id).map((comment, index) => (
                     <li key={index} style={{
                       cursor: "pointer", display: "flex", justifyContent: "space-between",
                       padding: "2px",
@@ -937,7 +989,7 @@ const QuillEditor = () => {
                           {comment.text}
                         </span>
                         <br />
-                        <strong>Comment:{comment?.range?.index} : {comment?.range?.length}</strong> {comment.comment}
+                        <strong>Comment:</strong> {comment.comment}
                       </div>
                       <div style={{ display: "flex", alignItems: "center" }}>
                         <div>
@@ -966,6 +1018,7 @@ const QuillEditor = () => {
               </div>
 
             </div>}
+
             <div>
               {showChart && ( // graph line 
                 <div className="chart-container">
@@ -974,9 +1027,6 @@ const QuillEditor = () => {
                     // data={chartData}
                     // onUpdate={handleUpdateChart} />
                     <div className="chart-container">
-                      {/* <VoiceGraph data={tempChartData} onUpdate={handleUpdateChart} /> */}
-                      <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
-
                       <div className="chart-controls">
 
                         <Tooltip title="Cancel" placement="bottom">
@@ -992,10 +1042,54 @@ const QuillEditor = () => {
                         </Tooltip>
 
                       </div>
+                      {/* <VoiceGraph data={tempChartData} onUpdate={handleUpdateChart} /> */}
+                      <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
+
+
                     </div>
                   )}
                 </div>
               )}
+              {showChart && inlineVoiceList.length !== 0 &&
+                <div className="inline-comment-list">
+                  <div className="comment-list-div">
+                    {inlineVoiceList.sort((a, b) => b.id - a.id).map((voice, index) => (
+                      <li key={index} style={{
+                        cursor: "pointer",
+                        display: "block",
+                        padding: "2px",
+                        marginTop: "5px",
+                        marginBottom: "5px",
+                        fontSize: "small",
+                        backgroundColor: "#333333",
+                        borderRadius: "6px",
+                      }}>
+                        {/* <div>
+                        <strong>Label:</strong> {voice.label}
+                        <br />
+                        <strong>Values:</strong> {voice.values.join(` | `)}
+                      </div> */}
+                        <div style={{ padding: "10px" }}>{voice.label} | {selectedTextKeyValue[voice.id].selectedText}</div>
+                        <div className="voice-item">
+
+                          <ul style={{ fontSize: "small", padding: "4px", boxShadow: "none !important" }}>
+                            {voice.values.map((value, i) => (
+                              <div style={{ padding: "5px" }} key={i}>Time {i}s: {value}</div>
+                            ))}
+                          </ul>
+                          <div style={{ display: "flex", alignItems: "center" }}>
+                            {/* <IconButton onClick={() => handleEditData(voice.id)}>
+                        <EditIcon />
+                      </IconButton> */}
+                            <IconButton onClick={() => handleDeleteVoiceData(voice.id)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </div>
+                </div>}
 
             </div>
           </div>
@@ -1015,10 +1109,10 @@ const QuillEditor = () => {
             {popoverContent}
           </div>
         )}
-        <div className="comment-sidebar">
-          <h3> Voice Data</h3>
+        {/* {<div className="comment-sidebar"> */}
+        {/* <h3> Voice Data</h3>
           <ul>
-            {/* {comments.map((comment, index) => (
+             {comments.map((comment, index) => (
               <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
                 <div>
                   <strong>Text:</strong>{" "}
@@ -1041,7 +1135,7 @@ const QuillEditor = () => {
                   </div>
                 </div>
               </li>
-            ))} */}
+            ))} 
             {voiceData.map((voice, index) => (
               <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
@@ -1059,8 +1153,8 @@ const QuillEditor = () => {
                 </div>
               </li>
             ))}
-          </ul>
-        </div>
+          </ul> */}
+        {/* </div>} */}
       </div>
     </div >
   );

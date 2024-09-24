@@ -1,4 +1,8 @@
 body {
+  background-image: linear-gradient(rgba(30, 30, 30, 0.9), rgba(30, 30, 30, 0.9)), url('../public/logo192.png');
+  /* background-size: cover; */
+  background-size: 200px 200px;
+  background-position: center;
   background-color: #1e1e1e
 }
 
@@ -18,4 +22,11 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.App{
+  display: flex;
+  justify-content: center; 
+  align-items: center;    
+  height: 100vh;
 }

@@ -19,6 +19,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import LineChartIcon from '@mui/icons-material/ShowChart';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 
 import { IconButton, Popover, Tooltip, Typography, TextField, Badge, Button, Slider, } from '@mui/material';
 
@@ -68,7 +69,7 @@ const QuillEditor = () => {
 
   const initialChartData = {
     labels: ['0s', '1s', '2s', '3s', '4s', '5s', '6s'], // Time labels
-    values: [20, 15, 30, 25, 35, 30, 20], // Initial values for the chart
+    values: [20, 20, 20, 20, 20, 20, 20], // Initial values for the chart
   };
 
 
@@ -89,8 +90,38 @@ const QuillEditor = () => {
   const [inlineCommentList, setInlineCommentList] = useState([]);
   const [inlineVoiceList, setInlineVoiceList] = useState([]);
   const inlineCommentRef = useRef(null);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(null);
 
+  const handleVoiceEntrySelect = async (id) => {
+    await setChartDataByClick(id)
+    setSelectedVoiceId(id); // Set the active voice entry
+  };
+  const setChartDataByClick = (chartId) => {
+    const _chartVoiceData = voiceData.find(item => item.id === chartId);
+    let _chartData = { ...chartData };
+    if (_chartVoiceData) {
+      _chartData = {
+        labels: _chartVoiceData.values.map((_, index) => `${index}s`), // Create time labels dynamically based on the number of values
+        values: _chartVoiceData.values // Use the values as they are
+      };
+    } else {
+      _chartData = _chartData
+    }
+    setChartData(_chartData);
+    setTempChartData(_chartData)
+    setSelectedVoiceId(null);
 
+  }
+
+  console.log(chartData, "vicky chart data", tempChartData, showChart)
+  // useEffect(() => {
+  //   if (chartData !== undefined) {
+  //     setShowChart(false); // graph line 
+  //     setTempChartData(chartData); // Use current chart data as temporary
+  //     setShowComment(false);
+  //     setShowChart(true);
+  //   }
+  // }, [chartData]);
 
   const handleSetComment = (action, e) => {
     switch (action) {
@@ -102,43 +133,100 @@ const QuillEditor = () => {
     }
   }
 
+  // const handleUpdateChart = (index, newValue) => {
+  //   const newValues = [...tempChartData.values];
+  //   newValues[index] = newValue; // Update the value at the given index
+  //   setTempChartData({ ...tempChartData, values: newValues });
+  // };
   const handleUpdateChart = (index, newValue) => {
-    const newValues = [...tempChartData.values];
-    newValues[index] = newValue; // Update the value at the given index
-    setTempChartData({ ...tempChartData, values: newValues });
+    setVoiceData(prevVoiceData =>
+      prevVoiceData.map(voiceEntry =>
+        voiceEntry.id === selectedVoiceId // Assuming `selectedVoiceId` is the current active voice entry ID
+          ? {
+            ...voiceEntry,
+            values: voiceEntry.values.map((value, i) => i === index ? newValue : value) // Only update the value at the specific index
+          }
+          : voiceEntry // Leave other voice entries unchanged
+      )
+    );
   };
+
+  const handleResetnNewChart = () => {
+    setSelectedVoiceId(null);
+    setTempChartData(initialChartData);
+
+  }
 
   const handleShowChart = () => {
 
     setShowChart(!showChart); // graph line 
     setTempChartData(chartData); // Use current chart data as temporary
     setShowComment(false);
-
+    setSelectedVoiceId(null);
   };
 
 
+  // const handleApplyChart = () => {
+  //   const newVoiceEntry = {
+  //     id: Date.now(),
+  //     range: { ...selectedRange },
+  //     label: `Voice Point ${voiceData.length + 1}`,
+  //     values: tempChartData.values,
+  //   };
+  //   console.log("newchart entry", newVoiceEntry)
+  //   setSelectedTextData([...selectedTextData, { id: newVoiceEntry.id, selectedText: selectedText }])
+  //   setVoiceData([...voiceData, newVoiceEntry]);
+  //   // setChartData(tempChartData); // Update the main chart data
+
+  //   setShowChart(false);
+  //   setIsToolbarVisible(false);
+  //   highlightSelectedText(); // Highlight the selected text
+  // };
+
   const handleApplyChart = () => {
-    const newVoiceEntry = {
-      id: Date.now(),
-      range: { ...selectedRange },
-      label: `Voice Point ${voiceData.length + 1}`,
-      values: tempChartData.values,
-    };
-    setSelectedTextData([...selectedTextData, { id: newVoiceEntry.id, selectedText: selectedText }])
-    setVoiceData([...voiceData, newVoiceEntry]);
-    setChartData(tempChartData); // Update the main chart data
+
+
+    if (selectedVoiceId === null) {
+
+      const newVoiceEntry = {
+        id: Date.now(),
+        range: { ...selectedRange },
+        label: `Voice Point ${voiceData.length + 1}`,
+        values: [...tempChartData.values], // Copy the values to avoid direct mutation
+      };
+
+      console.log("newchart entry", newVoiceEntry);
+
+      setSelectedTextData(prevSelectedTextData => [
+        ...prevSelectedTextData,
+        { id: newVoiceEntry.id, selectedText }
+      ]);
+
+      // Append the new voice entry to the voiceData array
+      setVoiceData(prevVoiceData => [
+        ...prevVoiceData,
+        newVoiceEntry
+      ]);
+    } else if (selectedVoiceId !== null) {
+      setChartDataByClick(selectedVoiceId)
+    }
 
     setShowChart(false);
     setIsToolbarVisible(false);
+    handleResetnNewChart();
+    setChartData(initialChartData);
     highlightSelectedText(); // Highlight the selected text
   };
+
+
+  console.log("newchart entry-------", voiceData, " :", selectedTextData)
 
   // Cancel and discard the changes
   const handleCancelChart = () => {
     setShowChart(false);
     setIsToolbarVisible(false);
     setTempChartData(chartData); // Reset to original chart data
-
+    setSelectedVoiceId(null);
   };
 
   const highlightSelectedText = () => {
@@ -358,8 +446,8 @@ const QuillEditor = () => {
           // Retain operations don't require any adjustments, so they can be skipped
         });
         newComments = newComments.filter(item => typeof item === 'object' && item !== null);
-        newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
-        setVoiceData(newVoiceData);
+        // newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
+        // setVoiceData(newVoiceData);
         setComments(newComments);
         applyDottedLineFormatting();
       }
@@ -369,7 +457,7 @@ const QuillEditor = () => {
       setIsItalic(editor.getFormat().italic || false);
       setIsUnderline(editor.getFormat().underline || false);
     };
-    
+
 
     // const handleTextChange = (delta, oldDelta, source) => {
     //   if (source === "user") {
@@ -489,8 +577,8 @@ const QuillEditor = () => {
       editor.root.removeEventListener('click', handleTextClick);
     }
   }, [comments])
-  console.log(voiceData,"VoiceData vicky")
-  console.log(comments,"comments vicky")
+  console.log(voiceData, "VoiceData vicky")
+  console.log(comments, "comments vicky")
   // useEffect(() => {
   // Add a class to the editor container based on dark mode state
   // if (isDarkMode) {
@@ -1029,6 +1117,12 @@ const QuillEditor = () => {
                     <div className="chart-container">
                       <div className="chart-controls">
 
+
+                        <Tooltip title="Reset data for a new start" placement="bottom">
+                          <IconButton onClick={handleResetnNewChart} color="inherit">
+                            <RotateLeftIcon />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Cancel" placement="bottom">
                           <IconButton onClick={handleCancelChart} color="warning">
                             <HighlightOffIcon />
@@ -1078,9 +1172,9 @@ const QuillEditor = () => {
                             ))}
                           </ul>
                           <div style={{ display: "flex", alignItems: "center" }}>
-                            {/* <IconButton onClick={() => handleEditData(voice.id)}>
-                        <EditIcon />
-                      </IconButton> */}
+                            <IconButton onClick={() => handleVoiceEntrySelect(voice.id)}>
+                              <EditIcon />
+                            </IconButton>
                             <IconButton onClick={() => handleDeleteVoiceData(voice.id)}>
                               <DeleteIcon />
                             </IconButton>
@@ -1109,10 +1203,10 @@ const QuillEditor = () => {
             {popoverContent}
           </div>
         )}
-        {/* {<div className="comment-sidebar"> */}
-        {/* <h3> Voice Data</h3>
+        {/* {<div className="comment-sidebar">
+          <h3> Voice Data</h3>
           <ul>
-             {comments.map((comment, index) => (
+            {comments.map((comment, index) => (
               <li key={index} style={{ cursor: "pointer", display: "flex", justifyContent: "space-between" }} onClick={() => handleSelectComment(comment.range)}>
                 <div>
                   <strong>Text:</strong>{" "}
@@ -1135,7 +1229,7 @@ const QuillEditor = () => {
                   </div>
                 </div>
               </li>
-            ))} 
+            ))}
             {voiceData.map((voice, index) => (
               <li key={voice.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
@@ -1153,8 +1247,8 @@ const QuillEditor = () => {
                 </div>
               </li>
             ))}
-          </ul> */}
-        {/* </div>} */}
+          </ul>
+        </div>} */}
       </div>
     </div >
   );

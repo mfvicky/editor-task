@@ -249,7 +249,7 @@
     content: '';
     position: absolute;
     left: 10px;
-    top: 0;
+    top: 10px;
     bottom: 0;
     width: 2px;
     background: repeating-linear-gradient(to bottom, green 0%, green 10%, transparent 10%, transparent 20%);

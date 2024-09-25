@@ -1,20 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
 import { useState } from 'react';
-
+import dragDataPlugin from 'chartjs-plugin-dragdata';
 const LineChart = ({ data, onUpdate }) => {
     const chartRef = useRef(null);
     const chartInstance = useRef(null);
     const [draggingIndex, setDraggingIndex] = useState(null);
     useEffect(() => {
-
+        console.log(data.labels, "vicky")
         const chartContext = chartRef.current.getContext('2d');
         if (chartInstance.current) {
             chartInstance.current.destroy();
         }
         // Register the necessary components for the chart
 
-        Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend);
+        Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend, dragDataPlugin);
 
         // Create the line chart
         chartInstance.current = new Chart(chartContext, {
@@ -80,7 +80,7 @@ const LineChart = ({ data, onUpdate }) => {
                     setDraggingIndex(chartElement[0].index); // Start dragging on click
                 }
             },
-            
+
         });
 
         const handleMouseMove = (e) => {

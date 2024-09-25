@@ -3,6 +3,7 @@ import Quill from 'quill';
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "./QuillEditor.css";
+
 // all icons
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
@@ -11,29 +12,21 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import CommentIcon from '@mui/icons-material/Comment';
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import LineChartIcon from '@mui/icons-material/ShowChart';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import RotateLeftIcon from '@mui/icons-material/RotateLeft';
 
-import { IconButton, Popover, Tooltip, Typography, TextField, Badge, Button, Slider, } from '@mui/material';
+import { IconButton, Popover, Badge, Slider, } from '@mui/material';
 
+
+//custom components
 import DottedLineModule from './custom/DottedLineModule';
-import LineChart from './custom/LineChart';
-import VoiceGraph from './custom/VoiceGraph';
 import SpanWithIdBlot from './custom/SpanWithIdBlot';
+import VoiceList from "./voicelist/VoiceList";
+import CommentList from "./commentlist/CommentList";
 
 
 Quill.register(DottedLineModule);
 Quill.register(SpanWithIdBlot);
-
-// --- dot-dashed code end ---
-
 
 const CustomUndoRedo = (editor) => {
   const toolbar = editor.getModule("toolbar");
@@ -64,7 +57,6 @@ const QuillEditor = () => {
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
   const [comments, setComments] = useState([]);
   const [isHighlighted, setIsHighlighted] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showChart, setShowChart] = useState(false);
 
   const initialChartData = {
@@ -76,7 +68,6 @@ const QuillEditor = () => {
   const [chartData, setChartData] = useState(initialChartData);
   const [voiceData, setVoiceData] = useState([]); // New state for voice data
   const [tempChartData, setTempChartData] = useState([]);
-  const [open, setOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
   const [selectedTextData, setSelectedTextData] = useState([]);
   const [popoverContent, setPopoverContent] = useState(''); // New state for popover content
@@ -114,30 +105,19 @@ const QuillEditor = () => {
   }
 
   console.log(chartData, "vicky chart data", tempChartData, showChart)
-  // useEffect(() => {
-  //   if (chartData !== undefined) {
-  //     setShowChart(false); // graph line 
-  //     setTempChartData(chartData); // Use current chart data as temporary
-  //     setShowComment(false);
-  //     setShowChart(true);
-  //   }
-  // }, [chartData]);
+
 
   const handleSetComment = (action, e) => {
     switch (action) {
       case 'add':
         setTempComment(e.target.value)
-        e.target.value === '' && setTempCommentId(0)
+        // e.target.value === '' && setTempCommentId(0)
         setIsToolbarVisible(true);
         break;
     }
   }
 
-  // const handleUpdateChart = (index, newValue) => {
-  //   const newValues = [...tempChartData.values];
-  //   newValues[index] = newValue; // Update the value at the given index
-  //   setTempChartData({ ...tempChartData, values: newValues });
-  // };
+
   const handleUpdateChart = (index, newValue) => {
     setVoiceData(prevVoiceData =>
       prevVoiceData.map(voiceEntry =>
@@ -157,6 +137,12 @@ const QuillEditor = () => {
 
   }
 
+  const handleResetnNewComment = () => {
+    setTempComment('')
+    setTempCommentId(0)
+    setIsToolbarVisible(true);
+  }
+
   const handleShowChart = () => {
 
     setShowChart(!showChart); // graph line 
@@ -166,25 +152,7 @@ const QuillEditor = () => {
   };
 
 
-  // const handleApplyChart = () => {
-  //   const newVoiceEntry = {
-  //     id: Date.now(),
-  //     range: { ...selectedRange },
-  //     label: `Voice Point ${voiceData.length + 1}`,
-  //     values: tempChartData.values,
-  //   };
-  //   console.log("newchart entry", newVoiceEntry)
-  //   setSelectedTextData([...selectedTextData, { id: newVoiceEntry.id, selectedText: selectedText }])
-  //   setVoiceData([...voiceData, newVoiceEntry]);
-  //   // setChartData(tempChartData); // Update the main chart data
-
-  //   setShowChart(false);
-  //   setIsToolbarVisible(false);
-  //   highlightSelectedText(); // Highlight the selected text
-  // };
-
   const handleApplyChart = () => {
-
 
     if (selectedVoiceId === null) {
 
@@ -282,6 +250,8 @@ const QuillEditor = () => {
           });
 
           setInlineCommentList(matchedComments);
+          setIsToolbarVisible(true);
+
         }
         if (voiceData.length !== 0) {
 
@@ -294,6 +264,8 @@ const QuillEditor = () => {
             );
           });
           setInlineVoiceList(matchedCommentsVoiceData);
+          setIsToolbarVisible(true);
+
         }
       } else {
         setIsToolbarVisible(false);
@@ -348,42 +320,6 @@ const QuillEditor = () => {
             });
           }
 
-
-
-
-          // Handle text deletion
-          // if (op.delete) {
-          //   const deleteIndex = editor.getSelection(true).index; // Get the affected range
-          //   const deleteLength = op.delete; // Number of characters deleted
-          //   const deleteEnd = deleteIndex + deleteLength;
-
-          //   // Remove or adjust comments that are fully or partially deleted
-          //   newComments = newComments.filter((comment) => {
-          //     const commentEnd = comment.range.index + comment.range.length;
-          //     const isDeleted =
-          //       (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
-          //       (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
-
-          //     // Remove if it's fully deleted
-          //     if (isDeleted) {
-          //       editor.formatText(comment.range.index, comment.range.length, "background", false);
-          //       return false;
-          //     }
-
-          //     // Adjust the position of the comment if it's after the deleted text
-          //     if (comment.range.index >= deleteIndex) {
-          //       return {
-          //         ...comment,
-          //         range: {
-          //           ...comment.range,
-          //           index: Math.max(comment.range.index - deleteLength, deleteIndex), // Shift backward
-          //         },
-          //       };
-          //     }
-
-          //     return true; // Keep the comment unchanged if unaffected
-          //   });
-          // }
 
           if (op.delete) {
             // Calculate the position where text is deleted
@@ -441,13 +377,11 @@ const QuillEditor = () => {
             });
           }
 
-
-
           // Retain operations don't require any adjustments, so they can be skipped
         });
         newComments = newComments.filter(item => typeof item === 'object' && item !== null);
-        // newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
-        // setVoiceData(newVoiceData);
+        newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
+        setVoiceData(newVoiceData);
         setComments(newComments);
         applyDottedLineFormatting();
       }
@@ -459,134 +393,24 @@ const QuillEditor = () => {
     };
 
 
-    // const handleTextChange = (delta, oldDelta, source) => {
-    //   if (source === "user") {
-    //     let newComments = JSON.parse(JSON.stringify(comments)); // Copy existing comments
-
-    //     delta.ops.forEach((op, index) => {
-    //       const oldOp = oldDelta.ops[index]; // Get corresponding old operation
-
-    //       // Handle text insertion
-    //       if (op.insert) {
-    //         const insertIndex = op.retain || 0;
-    //         const insertLength = op.insert.length;
-
-    //         // Use oldDelta to see if text is being replaced
-    //         if (oldOp && oldOp.delete) {
-    //           const deletedLength = oldOp.delete;
-    //           // Adjust comments based on the replaced text
-    //           newComments = newComments.map((comment) => {
-    //             if (comment.range.index >= insertIndex) {
-    //               return {
-    //                 ...comment,
-    //                 range: {
-    //                   ...comment.range,
-    //                   index: comment.range.index + insertLength - deletedLength, // Shift forward by net length change (insert - delete)
-    //                 },
-    //               };
-    //             }
-    //             return comment;
-    //           });
-    //         } else {
-    //           // Shift all comments after the insertion point forward
-    //           newComments = newComments.map((comment) => {
-    //             if (comment.range.index >= insertIndex) {
-    //               return {
-    //                 ...comment,
-    //                 range: {
-    //                   ...comment.range,
-    //                   index: comment.range.index + insertLength, // Shift forward by inserted text length
-    //                 },
-    //               };
-    //             }
-    //             return comment;
-    //           });
-    //         }
-    //       }
-
-    //       // Handle text deletion (same as before, using oldDelta if needed)
-    //       if (op.delete) {
-    //         const deleteIndex = op.retain || 0;
-    //         const deleteLength = op.delete;
-    //         const deleteEnd = deleteIndex + deleteLength;
-
-    //         // Adjust comments based on deleted range
-    //         newComments = newComments.filter((comment) => {
-    //           const commentEnd = comment.range.index + comment.range.length;
-    //           const isDeleted =
-    //             (comment.range.index >= deleteIndex && comment.range.index <= deleteEnd) ||
-    //             (commentEnd >= deleteIndex && commentEnd <= deleteEnd);
-
-    //           if (isDeleted) {
-    //             editor.formatText(comment.range.index, comment.range.length, "background", false);
-    //             return false; // Remove the comment if fully deleted
-    //           }
-
-    //           if (comment.range.index >= deleteIndex) {
-    //             return {
-    //               ...comment,
-    //               range: {
-    //                 ...comment.range,
-    //                 index: Math.max(comment.range.index - deleteLength, deleteIndex), // Shift the comment's starting point backward
-    //               },
-    //             };
-    //           }
-
-    //           return comment;
-    //         });
-    //       }
-    //     });
-
-    //     setComments(newComments); // Update state with adjusted comments
-    //     applyDottedLineFormatting(); // Optional visual formatting
-    //   }
-
-    //   // Update format state
-    //   setIsBold(editor.getFormat().bold || false);
-    //   setIsItalic(editor.getFormat().italic || false);
-    //   setIsUnderline(editor.getFormat().underline || false);
-    // };
-
     editor.on("selection-change", handleSelectionChange);
     editor.on("text-change", handleTextChange);
-    editor.root.addEventListener('click', handleTextClick);
-    // --- dot-dashed code ---
+
     // Apply dotted-line formatting on initial load
     applyDottedLineFormatting();
-    // --- dot-dashed code end ---
+
     // Cleanup function
     return () => {
       editor.off("selection-change", handleSelectionChange);
       editor.off("text-change", handleTextChange);
-      editor.root.removeEventListener('click', handleTextClick);
     };
   }, [comments, voiceData]);
-
+  console.log("comments", comments, "voiceData", voiceData)
   useEffect(() => {
     if (showComment === false) {
       setSelectedRange(null);
     }
   }, [showComment])
-
-  useEffect(() => {
-    const editor = quillRef.current.getEditor();
-    if (comments.length !== 0) {
-      editor.root.addEventListener('click', handleTextClick);
-    }
-    return () => {
-      editor.root.removeEventListener('click', handleTextClick);
-    }
-  }, [comments])
-  console.log(voiceData, "VoiceData vicky")
-  console.log(comments, "comments vicky")
-  // useEffect(() => {
-  // Add a class to the editor container based on dark mode state
-  // if (isDarkMode) {
-  //   document.body.classList.add("dark-mode");
-  // } else {
-  //   document.body.classList.remove("dark-mode");
-  // }
-  // }, [isDarkMode]);
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
@@ -633,98 +457,6 @@ const QuillEditor = () => {
   };
 
 
-  function handleTextClick(e) {
-    const target = e.target;
-    // const spanElement = document.querySelector(target);
-    const dataId = target.getAttribute('data-id');
-
-
-    if (target.tagName === 'SPAN' && dataId) {
-      const comment = comments.find((c) => c.id === Number(dataId));
-
-      if (comment) {
-        // Show the popover with the comment
-        setPopoverContent(comment.text + " | " + comment.comment);
-        // const rect = target.getBoundingClientRect();
-        // const position = {
-        //   top: rect.top + e.scrollY, // Adjust for scrolling
-        //   left: rect.left + e.scrollX,
-        // };
-        const editor = quillRef.current.getEditor();
-        const range = editor.getSelection();
-        const bounds = editor.getBounds(range.index);
-        const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
-        const toolbarLeft = bounds.left;
-        // setPopoverPosition({ top: e.clientY, left: e.clientX });
-
-        setPopoverPosition({ top: toolbarTop, left: toolbarLeft })
-        setIsPopoverVisible(true);
-      }
-    }
-
-    // setIsToolbarVisible(false);
-  };
-
-  // Function to wrap selected text in a <span> with an ID
-  const addCommentSpan = (commentId) => {
-    const editor = quillRef.current.getEditor();
-    const range = editor.getSelection();
-    if (range && range.length > 0) {
-      const selectedText = editor.getText(range.index, range.length);
-      const delta = editor.getContents(); // Get current Delta operations
-
-      let _deltaDataId = {};
-      let newDataIdObject = {};
-      // delta.ops.forEach((op) => {
-      //   if (op.insert && op.insert.includes(selectedText)) {
-      //     op.attributes = {
-      //       ...op.attributes,
-      //       'data-id': commentId,
-      //     };
-      //     newDataIdObject = op
-
-      //   }
-      // });
-      // if (Object.keys(deltaDataId).length === 0) {
-      //   _deltaDataId = JSON.parse(JSON.stringify(delta));
-      //   console.log("deltaDataId is empty");
-      // } else {
-      //   _deltaDataId = JSON.parse(JSON.stringify(deltaDataId))
-      //   console.log("deltaDataId is not empty");
-      //   _deltaDataId.ops.forEach((op) => {
-      //     if (op.insert && op.insert.includes(selectedText)) {
-      //       op = newDataIdObject
-      //     }
-      //   });
-      // }
-      // setDeltaDataId(_deltaDataId);
-
-
-      let editorHTML = editor.root.innerHTML;
-      const escapedText = selectedText.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&'); // Escape special regex chars
-      const regex = new RegExp(`(${escapedText})`, 'g');
-
-      // Only replace the first instance of the selected text
-      editorHTML = editorHTML.replace(regex, `<span data-id="${commentId}">$1</span>`);
-      // editor.format('spanWithId', commentId);
-      // editor.formatText(range.index, range.length, 'spanWithId', commentId);
-
-      editor.format('spanWithId', commentId);
-      editor.root.innerHTML = editorHTML;
-      // Set the updated innerHTML back into the editor
-      // Add a span tag with the commentId as the ID
-      // const spanHtml = `<span id="${commentId}">${selectedText}</span>`;
-
-      // Replace the selected text with the span tag
-      // editor.clipboard.dangerouslyPasteHTML(range.index, spanHtml);
-
-      // // Add the comment to the comments state
-      // setComments((prevComments) => [
-      //   ...prevComments,
-      //   { id: commentId, text: selectedText, range }
-      // ]);
-    }
-  };
 
   const handleComment = () => {
 
@@ -743,7 +475,7 @@ const QuillEditor = () => {
           range: selectedRange,
           color,
         };
-        // addCommentSpan(newComment.id)
+
         setComments((prevComments) => [...prevComments, newComment]);
 
       }
@@ -766,6 +498,7 @@ const QuillEditor = () => {
     setTempComment("");
     setTempCommentId(0);
   }
+
   useEffect(() => {
     if (tempCommentId !== 0 && inlineCommentRef.current) {
       inlineCommentRef.current.focus();
@@ -795,37 +528,11 @@ const QuillEditor = () => {
     editor.setSelection(range.index, range.length);
   };
 
-  const handleToggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
-  const handleAddVoiceData = () => {
-    const newVoiceData = {
-      id: Date.now(),
-      label: `Voice Point ${voiceData.length + 1}`,
-      values: [...chartData.values], // Copy the chart data
-    };
-
-    setVoiceData((prevVoiceData) => [...prevVoiceData, newVoiceData]);
-  };
 
   const handleDeleteVoiceData = (voiceId) => {
     setVoiceData((prevVoiceData) => prevVoiceData.filter((voice) => voice.id !== voiceId));
     setInlineVoiceList((prevVoiceData) => prevVoiceData.filter((voice) => voice.id !== voiceId));
   };
-
-
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setShowChart(false)
-  };
-
-
-
 
   const selectedTextKeyValue = selectedTextData.reduce((acc, item) => {
     acc[item.id] = item;
@@ -895,7 +602,6 @@ const QuillEditor = () => {
   </speak>
 `;
 
-    // Since SSML isn't fully supported in Chrome, use plain text for now
     // utterance.text = "Hello! This is a test. How are you doing today?";
     utterance.text = ssmlText;
     // Set pitch, rate, and volume
@@ -942,12 +648,7 @@ const QuillEditor = () => {
         <IconButton onClick={getSpeech}>
           <PlayCircleOutlineIcon />
         </IconButton>
-        {/* <IconButton onClick={handleToggleDarkMode}>
-          {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-        </IconButton> */}
-        {/* <IconButton onClick={handleShowChart}> 
-          <LineChartIcon /> 
-        </IconButton> */}
+
       </div>
 
       <div className="editor-and-comments">
@@ -1031,163 +732,38 @@ const QuillEditor = () => {
                 </Badge>
               </IconButton>
             </div>
-            {showComment && <div className="comment-message">
-              <div className="action-btn-comment">
-                <Tooltip title="Cancel" placement="bottom">
-                  <IconButton onClick={() => clearCommentStates()} color="warning">
-                    <HighlightOffIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Confirm" placement="bottom">
-                  <IconButton color="primary" onClick={handleComment}>
-                    <CheckCircleOutlineIcon />
-                  </IconButton>
-                </Tooltip>
-              </div>
-              <div style={{ marginBottom: "10px" }}>
+            <CommentList
+              showComment={showComment}
+              clearCommentStates={clearCommentStates}
+              handleComment={handleComment}
+              inlineCommentRef={inlineCommentRef}
+              inlineCommentList={inlineCommentList}
+              handleSelectComment={handleSelectComment}
+              tempComment={tempComment}
+              handleSetComment={handleSetComment}
+              setIsToolbarVisible={setIsToolbarVisible}
+              setShowComment={setShowComment}
+              handleEditComment={handleEditComment}
+              handleDeleteComment={handleDeleteComment}
+              handleResetnNewComment={handleResetnNewComment}
+            />
 
-                <TextField
-                  id="outlined-Comment-static"
-                  label="Comment"
-                  inputRef={inlineCommentRef}
-                  multiline
-                  onChange={(e) => handleSetComment('add', e)}
-                  rows={2}
-                  sx={{ width: "100%", color: "#F9F9F3" }}
-                  defaultValue={tempComment}
-                  placeholder="Please enter your comment"
-                />
-              </div>
-
-              {inlineCommentList.length !== 0 && <div className="inline-comment-list">
-                <div className="comment-list-div">
-                  {inlineCommentList.sort((a, b) => b.id - a.id).map((comment, index) => (
-                    <li key={index} style={{
-                      cursor: "pointer", display: "flex", justifyContent: "space-between",
-                      padding: "2px",
-                      marginTop: "5px",
-                      marginBottom: "5px",
-                      fontSize: "small",
-                      backgroundColor: "#333333",
-                      borderRadius: "6px"
-                    }} onClick={() => handleSelectComment(comment.range)}>
-                      <div>
-                        <strong>Text:</strong>{" "}
-                        <span>
-                          {comment.text}
-                        </span>
-                        <br />
-                        <strong>Comment:</strong> {comment.comment}
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <div>
-                          <IconButton onClick={() => {
-                            setIsToolbarVisible(false);
-                            setShowComment(false);
-                            handleEditComment(comment.id);
-                          }}>
-                            <EditIcon />
-                          </IconButton>
-                        </div>
-                        <div>
-                          <IconButton onClick={() => handleDeleteComment(comment.id)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </div>
-
-              </div>}
-
-              <div>
-
-              </div>
-
-            </div>}
-
-            <div>
-              {showChart && ( // graph line 
-                <div className="chart-container">
-                  {showChart && (
-                    // <VoiceGraph
-                    // data={chartData}
-                    // onUpdate={handleUpdateChart} />
-                    <div className="chart-container">
-                      <div className="chart-controls">
+            <VoiceList
+              showChart={showChart}
+              inlineVoiceList={inlineVoiceList}
+              selectedTextKeyValue={selectedTextKeyValue}
+              handleVoiceEntrySelect={handleVoiceEntrySelect}
+              handleDeleteVoiceData={handleDeleteVoiceData}
+              handleUpdateChart={handleUpdateChart}
+              tempChartData={tempChartData}
+              handleResetnNewChart={handleResetnNewChart}
+              handleCancelChart={handleCancelChart}
+              handleApplyChart={handleApplyChart} />
 
 
-                        <Tooltip title="Reset data for a new start" placement="bottom">
-                          <IconButton onClick={handleResetnNewChart} color="inherit">
-                            <RotateLeftIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Cancel" placement="bottom">
-                          <IconButton onClick={handleCancelChart} color="warning">
-                            <HighlightOffIcon />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title="Apply" placement="bottom">
-                          <IconButton onClick={handleApplyChart} color="primary">
-                            <CheckCircleOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-
-                      </div>
-                      {/* <VoiceGraph data={tempChartData} onUpdate={handleUpdateChart} /> */}
-                      <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
-
-
-                    </div>
-                  )}
-                </div>
-              )}
-              {showChart && inlineVoiceList.length !== 0 &&
-                <div className="inline-comment-list">
-                  <div className="comment-list-div">
-                    {inlineVoiceList.sort((a, b) => b.id - a.id).map((voice, index) => (
-                      <li key={index} style={{
-                        cursor: "pointer",
-                        display: "block",
-                        padding: "2px",
-                        marginTop: "5px",
-                        marginBottom: "5px",
-                        fontSize: "small",
-                        backgroundColor: "#333333",
-                        borderRadius: "6px",
-                      }}>
-                        {/* <div>
-                        <strong>Label:</strong> {voice.label}
-                        <br />
-                        <strong>Values:</strong> {voice.values.join(` | `)}
-                      </div> */}
-                        <div style={{ padding: "10px" }}>{voice.label} | {selectedTextKeyValue[voice.id].selectedText}</div>
-                        <div className="voice-item">
-
-                          <ul style={{ fontSize: "small", padding: "4px", boxShadow: "none !important" }}>
-                            {voice.values.map((value, i) => (
-                              <div style={{ padding: "5px" }} key={i}>Time {i}s: {value}</div>
-                            ))}
-                          </ul>
-                          <div style={{ display: "flex", alignItems: "center" }}>
-                            <IconButton onClick={() => handleVoiceEntrySelect(voice.id)}>
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton onClick={() => handleDeleteVoiceData(voice.id)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </div>
-                </div>}
-
-            </div>
           </div>
         )}
+        {console.log(showChart, isToolbarVisible, showComment, "showChart vicky")}
         {isPopoverVisible && (
           <div
             // ref={popoverRef}
@@ -1203,7 +779,7 @@ const QuillEditor = () => {
             {popoverContent}
           </div>
         )}
-       
+
       </div>
     </div >
   );

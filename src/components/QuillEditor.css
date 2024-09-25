@@ -13,7 +13,7 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    width: 80vw;
+    width: 70vw;
     height: 90vh;
     background-color: #f4f4f9;
     font-family: "Arial", sans-serif;
@@ -242,6 +242,7 @@
 .dotted-line-paragraph {
     position: relative;
     padding-left: 4% !important;
+    padding-right: 3.5% !important;
     margin-bottom: 20px !important;
 }
 

@@ -1,0 +1,221 @@
+diff --git a/src/components/QuillEditor.jsx b/src/components/QuillEditor.jsx
+index c08e71d..16e54b0 100644
+--- a/src/components/QuillEditor.jsx
++++ b/src/components/QuillEditor.jsx
+@@ -19,7 +19,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
+ import Brightness7Icon from '@mui/icons-material/Brightness7';
+ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+-import { Popover, Tooltip, Typography } from '@mui/material';
++import { Popover, Tooltip, Typography, TextField } from '@mui/material';
+ import DottedLineModule from './DottedLineModule';  // Assuming you moved the custom blot code here
+ import LineChartIcon from '@mui/icons-material/ShowChart';
+ import LineChart from './LineChart';
+@@ -82,7 +82,8 @@ const QuillEditor = () => {
+   const [isHighlighted, setIsHighlighted] = useState(true);
+   const [isDarkMode, setIsDarkMode] = useState(false);
+   const [showChart, setShowChart] = useState(false);
+-
++  const [showComment, setShowComment] = useState(false);
++  const [tempComment, setTempComment] = useState("");
+   const initialChartData = {
+     labels: ['0s', '1s', '2s', '3s', '4s', '5s', '6s'], // Time labels
+     values: [20, 15, 30, 25, 35, 30, 20], // Initial values for the chart
+@@ -99,6 +100,16 @@ const QuillEditor = () => {
+   const [isPopoverVisible, setIsPopoverVisible] = useState(false);
+   const popoverRef = useRef(null);
+   const [deltaDataId, setDeltaDataId] = useState({});
++  const [anchorEl, setAnchorEl] = useState(null);
++
++  const handleSetComment = (action, e) => {
++    switch (action) {
++      case 'add':
++        setTempComment(e.target.value)
++        // setIsToolbarVisible(true);
++        break;
++    }
++  }
+ 
+   const handleUpdateChart = (index, newValue) => {
+     console.log(index, newValue, 'vicky')
+@@ -174,6 +185,10 @@ const QuillEditor = () => {
+         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
+         const toolbarLeft = bounds.left;
+         setToolbarPosition({ top: toolbarTop, left: toolbarLeft });
++        setAnchorEl({
++          top: bounds.top + bounds.height + 50, // Position adjustment
++          left: bounds.left,
++        });
+         setIsToolbarVisible(true);
+         setSelectedRange(range);
+         const selected = editor.getText(range.index, range.length);
+@@ -183,6 +198,7 @@ const QuillEditor = () => {
+         setIsToolbarVisible(false);
+         setSelectedRange(null);
+         removePopOverState(false)
++        setAnchorEl(null);
+       }
+     };
+ 
+@@ -407,7 +423,7 @@ const QuillEditor = () => {
+       editor.root.removeEventListener('click', handleTextClick);
+     };
+   }, [comments]);
+-
++  console.log(isToolbarVisible, "isToolbarVisible")
+   useEffect(() => {
+     const editor = quillRef.current.getEditor();
+     if (comments.length !== 0) {
+@@ -445,7 +461,7 @@ const QuillEditor = () => {
+   const handleRateChange = (e) => {
+     const editor = quillRef.current.getEditor();
+     const color = `hsl(${e.target.value}, 100%, 50%)`;
+-    editor.formatText(selectedRange.index, selectedRange.length, "background", color);
++    selectedRange && editor.formatText(selectedRange.index, selectedRange.length, "background", color);
+     setRateValue(e.target.value);
+     setSelectedColor(color);
+   };
+@@ -557,7 +573,10 @@ const QuillEditor = () => {
+   };
+ 
+   const handleComment = () => {
+-    const commentText = prompt("Add a comment:");
++    // const commentText = prompt("Add a comment:");
++    const commentText = tempComment;
++    console.log(tempComment, commentText, selectedRange, "vicky")
++
+     if (commentText && selectedRange) {
+       const editor = quillRef.current.getEditor();
+       const selectedText = editor.getText(selectedRange.index, selectedRange.length);
+@@ -572,6 +591,9 @@ const QuillEditor = () => {
+         color,
+       };
+       // addCommentSpan(newComment.id)
++      setShowComment(false);
++      setIsToolbarVisible(false)
++      setTempComment('')
+       setComments((prevComments) => [...prevComments, newComment]);
+     }
+   };
+@@ -735,53 +757,6 @@ const QuillEditor = () => {
+   return (
+     <div className="editor-container">
+ 
+-
+-      {/* <Dialog
+-        open={showChart}
+-        onClose={handleClose}
+-        aria-labelledby="alert-dialog-title"
+-        aria-describedby="alert-dialog-description"
+-      >
+-        <DialogTitle id="alert-dialog-title" sx={{ backgroundColor: "#1e1e1e", color: "#e0e0e0" }}>
+-          Change text voice modulation
+-        </DialogTitle>
+-        <DialogContent sx={{ backgroundColor: "#1e1e1e" }}>
+-          <DialogContentText id="alert-dialog-description">
+-            {showChart && ( // graph line 
+-              <div className="chart-container">
+-                {showChart && (
+-                 
+-                  <div className="chart-container">
+-                    <LineChart data={tempChartData} onUpdate={handleUpdateChart} />
+-
+-                    <div className="chart-controls">
+-
+-                      <Tooltip title="Cancel" placement="bottom">
+-                        <IconButton onClick={handleCancelChart} color="warning">
+-                          <HighlightOffIcon />
+-                        </IconButton>
+-                      </Tooltip>
+-
+-                      <Tooltip title="Apply" placement="bottom">
+-                        <IconButton onClick={handleApplyChart} color="primary">
+-                          <CheckCircleOutlineIcon />
+-                        </IconButton>
+-                      </Tooltip>
+-
+-                    </div>
+-                  </div>
+-                )}
+-              </div>
+-            )}
+-          </DialogContentText>
+-        </DialogContent>
+-        <DialogActions>
+-          <Button onClick={handleCancelChart} size="small">Cancel</Button>
+-          <Button onClick={handleApplyChart} size="small" autoFocus>
+-            Apply
+-          </Button>
+-        </DialogActions>
+-      </Dialog> */}
+       <div className="custom-toolbar">
+         <IconButton onClick={() => quillRef.current.getEditor().history.undo()}>
+           <UndoIcon />
+@@ -876,10 +851,39 @@ const QuillEditor = () => {
+                 }}
+               ></div>
+ 
+-              <IconButton color="info" onClick={handleComment}>
++              <IconButton color="info" onClick={() => setShowComment(true)}>
+                 <CommentIcon />
+               </IconButton>
+             </div>
++            {showComment && <div className="comment-message">
++              <div>
++
++                <TextField
++                  id="outlined-Comment-static"
++                  label="Comment"
++                  multiline
++                  onChange={(e) => handleSetComment('add', e)}
++                  rows={4}
++                  sx={{ width: "100%" }}
++                  placeholder="Please enter your comment"
++                />
++              </div>
++              <div>
++
++              </div>
++              <div>
++                <Tooltip title="Cancel" placement="bottom">
++                  <IconButton onClick={() => setShowComment(false)} color="warning">
++                    <HighlightOffIcon />
++                  </IconButton>
++                </Tooltip>
++                <Tooltip title="Confirm" placement="bottom">
++                  <IconButton color="primary" onClick={handleComment}>
++                    <CheckCircleOutlineIcon />
++                  </IconButton>
++                </Tooltip>
++              </div>
++            </div>}
+             <div>
+               {showChart && ( // graph line 
+                 <div className="chart-container">
+@@ -915,6 +919,26 @@ const QuillEditor = () => {
+ 
+           </div>
+         )}
++        <div>
++          {/* <Popover
++             open={Boolean(anchorEl)}
++            anchorReference="anchorPosition"
++            anchorPosition={anchorEl}
++            onClose={() => { setShowComment(false); setAnchorEl(null); }}
++            anchorOrigin={{
++              vertical: 'bottom',
++              horizontal: 'left',
++            }}
++            transformOrigin={{
++              vertical: 'top',
++              horizontal: 'left',
++            }}
++          > <div style={{ padding: '20px', width: '250px' }}>
++           
++            </div>
++          </Popover> */}
++
++        </div>
+         {isPopoverVisible && (
+           <div
+             // ref={popoverRef}

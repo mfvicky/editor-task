@@ -4177,3 +4177,136 @@
 // };
 
 // export default QuillEditor;
+
+
+// line chart .js
+
+
+// linechart with ui changes
+
+// import React, { useEffect, useRef } from 'react';
+// import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
+// import dragDataPlugin from 'chartjs-plugin-dragdata';
+
+// const LineChart = ({ data, onUpdate, width = 500, height = 80 }) => {
+//     const chartRef = useRef(null);
+//     const chartInstance = useRef(null);
+
+//     useEffect(() => {
+//         const chartContext = chartRef.current.getContext('2d');
+
+//         // Destroy old instance if it exists
+//         if (chartInstance.current) {
+//             chartInstance.current.destroy();
+//         }
+
+//         // Register the necessary components for the chart
+//         Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend, dragDataPlugin);
+
+//         // Create the line chart with customized point markers and labels
+//         chartInstance.current = new Chart(chartContext, {
+//             type: 'line',
+//             data: {
+//                 labels: data.labels, // x-axis labels
+//                 datasets: [{
+//                     label: '',
+//                     data: data.values, // y-axis values
+//                     borderColor: 'rgba(255, 255, 255, 0.5)', // Line color
+//                     backgroundColor: 'rgba(75, 192, 192, 0.2)', // Background under the line
+//                     pointBackgroundColor: (ctx) => {
+//                         const index = ctx.dataIndex;
+//                         // return index === 1 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 255, 255, 1)'; // Blue for the selected point
+//                         return 'rgba(255, 255, 255, 1)';
+//                     },
+//                     pointRadius: 4, // Increase point size
+//                     pointHoverRadius: 5,
+//                     pointHoverBackgroundColor: 'rgba(75, 192, 192, 1)',
+//                     pointBorderWidth: 2,
+//                     fill: false,
+//                 }]
+//             },
+//             options: {
+//                 responsive: true,
+//                 maintainAspectRatio: false,
+//                 plugins: {
+//                     legend: {
+//                         display: false, // Hide legend voice data label value
+//                     },
+//                     tooltip: {
+//                         enabled: true // Disable default tooltips
+//                     },
+//                     // Custom plugin to draw value labels under each point
+//                     afterDatasetsDraw: (chart) => {
+//                         const ctx = chart.ctx;
+//                         chart.data.datasets[0].data.forEach((value, index) => {
+//                             const meta = chart.getDatasetMeta(0);
+//                             const point = meta.data[index].getProps(['x', 'y'], true);
+//                             ctx.font = '14px Arial';
+//                             ctx.fillStyle = 'blue';
+//                             ctx.textAlign = 'center';
+//                             ctx.fillText(value, point.x, point.y + 20); // Display value below the point
+//                         });
+//                     }
+//                 },
+//                 scales: {
+//                     x: {
+//                         type: 'category',
+//                         title: {
+//                             display: false,
+//                             text: 'Time (seconds)',
+//                             color: '#FFF', // Customize axis label color
+//                         },
+//                         ticks: {
+//                             color: '#FFF', // Customize x-axis tick color
+//                             display: false,
+//                         },
+//                         border: {
+//                             color: 'white', // Change the x-axis line color to white
+//                         },
+//                         grid: {
+//                             display: false, // Optionally hide grid lines for x-axis
+//                         },
+//                     },
+//                     y: {
+//                         type: 'linear',
+//                         title: {
+//                             display: false,
+//                             text: 'Amplitude',
+//                             color: '#FFF', // Customize axis label color
+//                         },
+//                         ticks: {
+//                             color: '#FFF', // Customize y-axis tick color
+//                             display: false,
+//                         },
+//                         border: {
+//                             color: 'white', // Change the x-axis line color to white
+//                         },
+//                         grid: {
+//                             // color: 'white',
+//                             // drawOnChartArea: false,
+//                             display: false, // Optionally hide grid lines for x-axis
+//                         },
+//                         min: 0,
+//                         max: 100,
+//                     }
+//                 }
+//             }
+//         });
+
+//         return () => {
+//             // Clean up chart instance on component unmount
+//             if (chartInstance.current) {
+//                 chartInstance.current.destroy();
+//             }
+//         };
+//     }, [data, onUpdate]);
+
+//     // return <canvas ref={chartRef} />;
+//     return (
+//         <div style={{ width: `${width}px`, height: `${height}px` }}>
+//             <canvas ref={chartRef} style={{ width: '100%', height: '100%' }} />
+//         </div>
+//     );
+// };
+
+// export default LineChart;

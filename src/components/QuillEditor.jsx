@@ -136,15 +136,17 @@ const QuillEditor = () => {
     setTempChartData(initialChartData);
 
   }
-
+  console.log(tempComment, tempCommentId, "editnNewComment")
   const handleResetnNewComment = () => {
-    setTempComment('')
-    setTempCommentId(0)
-    setIsToolbarVisible(true);
+    console.log('handleResetnNewComment', tempComment, tempCommentId, isToolbarVisible)
+    setTempComment(prev => '');
+    setTempCommentId(prev => 0);
+    setIsToolbarVisible(prev => true);
+    inlineCommentRef.current.value = '';
   }
 
   const handleShowChart = () => {
-
+    setIsToolbarVisible(true);
     setShowChart(!showChart); // graph line 
     setTempChartData(chartData); // Use current chart data as temporary
     setShowComment(false);
@@ -227,7 +229,7 @@ const QuillEditor = () => {
 
     // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
-
+      console.log(range, "vicky------ range")
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
         console.log(bounds, 'vicky bounds')
@@ -269,6 +271,8 @@ const QuillEditor = () => {
         }
       } else {
         setIsToolbarVisible(false);
+        // setShowChart(false);
+        // setShowComment(false);
         // setSelectedRange(null);
         removePopOverState(false)
         // setInlineCommentList([])
@@ -406,11 +410,19 @@ const QuillEditor = () => {
     };
   }, [comments, voiceData]);
   console.log("comments", comments, "voiceData", voiceData)
-  useEffect(() => {
-    if (showComment === false) {
-      setSelectedRange(null);
-    }
-  }, [showComment])
+  //this issue with when swtich on and off of comment
+  // useEffect(() => {
+  //   if (showChart === true) {
+  //     setIsToolbarVisible(true);
+  //   }
+  //   if(showComment === true){
+  //     setIsToolbarVisible(true);
+  //   }
+
+  //   if (showChart===false && showComment===false){
+  //     setIsToolbarVisible(false)
+  //   }
+  // }, [showChart,showComment])
 
   const handleBold = () => {
     const editor = quillRef.current.getEditor();
@@ -502,6 +514,7 @@ const QuillEditor = () => {
   useEffect(() => {
     if (tempCommentId !== 0 && inlineCommentRef.current) {
       inlineCommentRef.current.focus();
+      inlineCommentRef.current.value = tempComment;
     }
   }, [tempCommentId, tempComment])
 
@@ -645,9 +658,9 @@ const QuillEditor = () => {
         <IconButton onClick={handleHighlight}>
           <FormatColorFillIcon />
         </IconButton>
-        <IconButton onClick={getSpeech}>
+        {/* <IconButton onClick={getSpeech}>
           <PlayCircleOutlineIcon />
-        </IconButton>
+        </IconButton> */}
 
       </div>
 

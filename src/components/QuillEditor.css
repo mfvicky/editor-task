@@ -9,7 +9,7 @@
 }
 
 .editor-container {
-    
+
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -265,6 +265,7 @@
     height: 10px;
     border-radius: 50%;
     background-color: green;
+    cursor: pointer;
 }
 
 .dotted-line-paragraph.empty::after {
@@ -275,9 +276,9 @@
     width: 10px;
     height: 10px;
     border: 1px solid green;
-    /* Hollow dot */
+   
     background-color: transparent;
-    /* Transparent background */
+    
 }
 
 

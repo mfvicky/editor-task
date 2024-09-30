@@ -19,13 +19,16 @@ import { IconButton, Popover, Badge, Slider, } from '@mui/material';
 
 
 //custom components
-import DottedLineModule from './custom/DottedLineModule';
+import DottedLineModule, { applyDottedLineFormatting, handleClick } from './custom/DottedLineModule';
+// import DottedLineModule from './custom/DottedLineModule';
+
 import SpanWithIdBlot from './custom/SpanWithIdBlot';
 import VoiceList from "./voicelist/VoiceList";
 import CommentList from "./commentlist/CommentList";
+import ModalComponent from './custom/ModalComponent';
 
-
-Quill.register(DottedLineModule);
+// Quill.register(DottedLineModule);
+// Quill.register('modules/dottedLine', DottedLineModule);
 Quill.register(SpanWithIdBlot);
 
 const CustomUndoRedo = (editor) => {
@@ -83,6 +86,9 @@ const QuillEditor = () => {
   const inlineCommentRef = useRef(null);
   const [selectedVoiceId, setSelectedVoiceId] = useState(null);
 
+  const [modalData, setModalData] = useState(null); // State for modal
+  const [paragraphData, setParagraphData] = useState({}); // State to store paragraph data
+
   const handleVoiceEntrySelect = async (id) => {
     await setChartDataByClick(id)
     setSelectedVoiceId(id); // Set the active voice entry
@@ -104,7 +110,7 @@ const QuillEditor = () => {
 
   }
 
-  console.log(chartData, "vicky chart data", tempChartData, showChart)
+  // console.log(chartData, "vicky chart data", tempChartData, showChart)
 
 
   const handleSetComment = (action, e) => {
@@ -136,9 +142,9 @@ const QuillEditor = () => {
     setTempChartData(initialChartData);
 
   }
-  console.log(tempComment, tempCommentId, "editnNewComment")
+  // console.log(tempComment, tempCommentId, "editnNewComment")
   const handleResetnNewComment = () => {
-    console.log('handleResetnNewComment', tempComment, tempCommentId, isToolbarVisible)
+    // console.log('handleResetnNewComment', tempComment, tempCommentId, isToolbarVisible)
     setTempComment(prev => '');
     setTempCommentId(prev => 0);
     setIsToolbarVisible(prev => true);
@@ -165,7 +171,7 @@ const QuillEditor = () => {
         values: [...tempChartData.values], // Copy the values to avoid direct mutation
       };
 
-      console.log("newchart entry", newVoiceEntry);
+      // console.log("newchart entry", newVoiceEntry);
 
       setSelectedTextData(prevSelectedTextData => [
         ...prevSelectedTextData,
@@ -189,7 +195,7 @@ const QuillEditor = () => {
   };
 
 
-  console.log("newchart entry-------", voiceData, " :", selectedTextData)
+  // console.log("newchart entry-------", voiceData, " :", selectedTextData)
 
   // Cancel and discard the changes
   const handleCancelChart = () => {
@@ -213,26 +219,26 @@ const QuillEditor = () => {
     const editor = quillRef.current.getEditor();
     CustomUndoRedo(editor);
     // --- dot-dashed code ---
-    const applyDottedLineFormatting = () => {
-      const paragraphs = editor.root.querySelectorAll('p');
-      paragraphs.forEach((p) => {
-        if (!p.classList.contains('dotted-line-paragraph')) {
-          p.classList.add('dotted-line-paragraph');
-        }
-        if (p.textContent.trim() === "") { // Check if paragraph is empty
-          p.classList.add('empty'); // Add 'empty' class for empty paragraphs
-        } else {
-          p.classList.remove('empty'); // Remove 'empty' class if not empty
-        }
-      });
-    };
+    // const applyDottedLineFormatting = () => {
+    //   const paragraphs = editor.root.querySelectorAll('p');
+    //   paragraphs.forEach((p) => {
+    //     if (!p.classList.contains('dotted-line-paragraph')) {
+    //       p.classList.add('dotted-line-paragraph');
+    //     }
+    //     if (p.textContent.trim() === "") { // Check if paragraph is empty
+    //       p.classList.add('empty'); // Add 'empty' class for empty paragraphs
+    //     } else {
+    //       p.classList.remove('empty'); // Remove 'empty' class if not empty
+    //     }
+    //   });
+    // };
 
     // --- dot-dashed code end ---
     const handleSelectionChange = (range) => {
-      console.log(range, "vicky------ range")
+      // console.log(range, "vicky------ range")
       if (range && range.length > 0) {
         const bounds = editor.getBounds(range.index);
-        console.log(bounds, 'vicky bounds')
+        // console.log(bounds, 'vicky bounds')
         const toolbarTop = bounds.top + bounds.height + 20; // 20px below the selected text
         const toolbarLeft = bounds.left - 200;
         setToolbarPosition({ top: toolbarTop, left: toolbarLeft });
@@ -387,7 +393,9 @@ const QuillEditor = () => {
         newVoiceData = newVoiceData.filter(item => typeof item === 'object' && item !== null);
         setVoiceData(newVoiceData);
         setComments(newComments);
-        applyDottedLineFormatting();
+        // applyDottedLineFormatting();
+        // applyDottedLineFormatting(editor);
+
       }
 
       // Update format state
@@ -399,17 +407,27 @@ const QuillEditor = () => {
 
     editor.on("selection-change", handleSelectionChange);
     editor.on("text-change", handleTextChange);
+    editor.root.addEventListener('click', (e) => handleClick(e, setModalData));
 
     // Apply dotted-line formatting on initial load
-    applyDottedLineFormatting();
+    // applyDottedLineFormatting();
+    applyDottedLineFormatting(editor, setModalData);
 
+    // editor.root.addEventListener('click', handleClick);
     // Cleanup function
     return () => {
       editor.off("selection-change", handleSelectionChange);
       editor.off("text-change", handleTextChange);
+      editor.root.removeEventListener('click', (e) => handleClick(e, setModalData));
     };
   }, [comments, voiceData]);
-  console.log("comments", comments, "voiceData", voiceData)
+  // const handleSave = (id, content) => {
+  //   setParagraphData((prev) => ({
+  //     ...prev,
+  //     [id]: content, // Save the content with the paragraph's unique ID
+  //   }));
+  // };
+  // console.log("comments", comments, "voiceData", voiceData)
   //this issue with when swtich on and off of comment
   // useEffect(() => {
   //   if (showChart === true) {
@@ -644,10 +662,23 @@ const QuillEditor = () => {
   //     document.removeEventListener('mousedown', handleClickOutside); // Cleanup listener on unmount
   //   };
   // }, [isPopoverVisible]);
-
+  console.log('vicky-------modeldata', modalData)
   return (
     <div className="editor-container">
-
+      {/* <ModalComponent
+        modalData={modalData}
+        onClose={() => setModalData(null)}
+        onSave={handleSave}
+      /> */}
+      {/* For displaying the paragraph data (from another file/component) */}
+      {/* <div>
+        <h4>Saved Paragraph Data:</h4>
+        <ul>
+          {Object.entries(paragraphData).map(([id, content]) => (
+            <li key={id}>Paragraph {id}: {content}</li>
+          ))}
+        </ul>
+      </div> */}
       <div className="custom-toolbar">
         <IconButton onClick={() => quillRef.current.getEditor().history.undo()}>
           <UndoIcon />
@@ -776,7 +807,7 @@ const QuillEditor = () => {
 
           </div>
         )}
-        {console.log(showChart, isToolbarVisible, showComment, "showChart vicky")}
+        {/* {console.log(showChart, isToolbarVisible, showComment, "showChart vicky")} */}
         {isPopoverVisible && (
           <div
             // ref={popoverRef}
